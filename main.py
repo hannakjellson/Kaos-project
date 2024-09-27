@@ -37,6 +37,14 @@ class Environment(QtWidgets.QWidget):
                 painter.drawPath(cells[i][j])
 
 
+class Individual:
+    def __init__(self, xindex, yindex):
+        self.xpos=xindex
+        self.ypos=yindex
+
+    def behavior(self):
+        raise NotImplementedError("All subclasses must have a behavior!")
+
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
         super().__init__()
