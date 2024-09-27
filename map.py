@@ -2,11 +2,10 @@ import numpy as np
 COLORS=['b','g','r','c','m','y','k','w']
 GRID_SIZE=(10,10)
 SPECIES=[1,2]
-INIT_VALUES=np.ones(GRID_SIZE)# Should be an array of cells. Potentially read from interactive window later.
 
 class Grid():
-    def __init__(self, size, array):
-        self.size=size
+    def __init__(self, array):
+        self.size=np.shape(array)
         self.array=array
 
     def __getitem__(self, indices):
@@ -18,16 +17,15 @@ class Grid():
         return self.array
     
     def get_center(self):
-        # TODO return center of the map
-        pass
+        # TODO generalize for other shapes of the cells
+        return (1,1)
 
     def get_local_species(self, cell_id):
         # TODO: make it work at borders. Return grid of values around cell_id maybe return as a grid, so we can implement a get_center method here.
-        pass
+        return Grid(self.array[cell_id[0]-1:cell_id[0]+1,cell_id[1]-1:cell_id[1]+1])
     
     def set_local_species(self, cell_id, local_species):
-        # TODO: update neighbouring values around cell_id
-        pass
+        self.array[cell_id[0]-1:cell_id[0]+1,cell_id[1]-1:cell_id[1]+1]=local_species # Can I do this?
 
     def is_none(self, i, j):
         return self.array[i][j] is None 
@@ -51,18 +49,25 @@ class Grid():
     def update(self):
         indices = np.array([(i, j) for i in range(GRID_SIZE[0]) for j in range(GRID_SIZE[1])])
         np.random.shuffle(indices) # Idea: choose priority rules based on how long they have gone without food and age.
-        moved_species_grid=Grid(GRID_SIZE, np.empty(GRID_SIZE))
+        empty_array=np.empty(GRID_SIZE, dtype=object)
+        empty_array[empty_array==None]=Empty_Cell() # Should be possible to write better.
+        moved_species_grid=Grid(empty_array)
         for index in indices:
-            if self.array[index].specie() in SPECIES:
+            i,j=index
+            if self.array[i][j].get_specie() in SPECIES:
                 local_species=self.get_local_species(index)
                 moved_local_species=moved_species_grid.get_local_species(index)
-                self.array[index], updated_moved_local_species=self.array[index].update(local_species, moved_local_species)
+                self.array[i][j], updated_moved_local_species=self.array[i][j].update(local_species, moved_local_species)
                 moved_species_grid.set_local_species(index, updated_moved_local_species)
+        return self.array
             
 
 class Cell():
     def __init__(self, specie):
         self.specie=specie
+
+    def get_specie(self):
+        return self.specie
     
     def update(self, local_species, moved_local_species):
         """ Updates the value in the gridbox grid_box.
@@ -70,33 +75,30 @@ class Cell():
         neighbours: values in surrounding gridboxes
         maps: dict with the possible gridboxes with surrounding.
         colors: """
-        updated_center=moved_local_species.get_center().specie() 
-        if updated_center is not None:
-            return Cell(updated_center), moved_local_species # I guess we can ignore what in the cell before after this.
-        return self.update(local_species, moved_local_species)
+        raise NotImplementedError("Should be implemented in the subclass")
+        # updated_center=moved_local_species.get_center().get_specie() 
+        # # Loop through all non-empty cells.
+        # if updated_center is not None:
+        #     return Cell(updated_center), moved_local_species # I guess we can ignore what was in the cell before, after this.
+        # return self.update(local_species, moved_local_species)
 
 class Empty_Cell(Cell):
 
     def __init__(self):    
-        super().__init__()
-
-    def specie(self):
-        return None
+        super().__init__(None)
   
     def update(self, local_species, moved_local_species):
-        # TODO: implement something for the update in the end i guess.
+        # Should not happen.
         pass
 
 class Fish(Cell):
 
     def __init__(self, has_moved):
-        super().__init__()
+        if has_moved:
+            super().__init__(-1)
+        else:
+            super().__init__(1)
         self.has_moved=has_moved
-
-    def specie(self):
-        if self.has_moved:
-            return -1
-        return 1
     
     def update(self, local_species, moved_local_species):
         if moved_local_species.get_center() is not None:
@@ -115,19 +117,17 @@ class Fish(Cell):
 class Shark(Cell):
 
     def __init__(self, has_moved):
-        super().__init__()
+        if has_moved:
+            super().__init__(-2)
+        else:
+            super().__init__(2)
         self.has_moved=has_moved
-
-    def specie(self):
-        if self.has_moved:
-            return -2
-        return 2
 
     def update(self, local_species, moved_local_species):
         # 1 and moved to is not 2 or 1=> ok to go to
         # -1 and moved to is not 2 => ok to go to
-        fish_indices=np.argwhere((local_species.to_matrix()==1 and moved_local_species.to_matrix() is None) or moved_local_species.to_matrix()==-1)
-        if fish_indices is not None:
+        fish_indices=np.argwhere(np.logical_or(np.logical_and(local_species.get_matrix()==1, moved_local_species.get_matrix() == None), moved_local_species.get_matrix()==-1))
+        if fish_indices.size>0:
             move_to=np.random.choice(fish_indices)
             moved_local_species[move_to]=Shark(False)
             moved_local_species[moved_local_species.get_center()]=Shark(True)
@@ -144,9 +144,14 @@ class Shark(Cell):
                 return self, moved_local_species
 
 
-    if __name__ == '__main__':   
-        pre_grid=Grid(GRID_SIZE, INIT_VALUES)
-        pre_grid.update()
+if __name__ == '__main__':  
+    init_values=np.empty(GRID_SIZE, dtype=object)# Should be an array of cells. Potentially read from interactive window later.
+    init_values[5,5]=Shark(False)
+    init_values[1,3]=Fish(False)
+    init_values[init_values == None]=Empty_Cell()
+    pre_grid=Grid(init_values)
+    print(pre_grid.update() is not Empty_Cell)
+
 
 
         
@@ -156,7 +161,7 @@ class Shark(Cell):
     #     none_indices = []
     #     for i, row in enumerate(self.array):
     #         for j, element in enumerate(row):
-    #             if element.specie() is None:
+    #             if element.get_specie() is None:
     #                 none_indices.append((i, j)) # Don't think that the element itself will be None.
     #     return none_indices
 
