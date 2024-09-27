@@ -1,16 +1,53 @@
+import copy
 import numpy as np
 import pyqtgraph as pg
 from pyqtgraph import QtGui, QtCore, QtWidgets
 
+import TestPopulation
 
 print("Hello world/Agnes")
 print("Sup world/Daniel")
 print("Yoyo world/Hanna")
 
+def torusloop(pos, size):
+    return np.mod(pos+size, size)  # Fixa torus geometri
 
 class Environment(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
+        self.xsize = 50
+        self.ysize = 50
+
+        self.population = [[TestPopulation.Individual for j in range(self.ysize)] for i in range(self.xsize)]
+        self.requestedPopulation = [[TestPopulation.Individual for j in range(self.ysize)] for i in range(self.xsize)]
+
+        #  Start population
+        for i in range(self.xsize):
+            for j in range(self.ysize):
+                if (i==4 and j==4) or (i==5 and j==4) or (i==5 and j==5) or (i==6 and j==5) or (i==4 and j==6):
+                    self.population[i][j]=TestPopulation.Alive(i,j)
+                else:
+                    self.population[i][j] = TestPopulation.Dead(i, j)
+
+        self.day=QtCore.QTimer()
+        self.day.timeout.connect(self.develop)
+        self.day.start(200)  #  Tid mellan steg i millisekunder (lägre ger högre framerate)
+
+    def develop(self):
+        for row in self.population:
+            for individual in row:
+                x,y = individual.getpos()
+                neighbors=[self.population[torusloop(x-1, self.xsize)][torusloop(y-1, self.ysize)],
+                           self.population[torusloop(x-1, self.xsize)][torusloop(y, self.ysize)],
+                           self.population[torusloop(x-1, self.xsize)][torusloop(y+1, self.ysize)],
+                           self.population[torusloop(x, self.xsize)][torusloop(y+1, self.ysize)],
+                           self.population[torusloop(x+1, self.xsize)][torusloop(y+1, self.ysize)],
+                           self.population[torusloop(x+1, self.xsize)][torusloop(y, self.ysize)],
+                           self.population[torusloop(x+1, self.xsize)][torusloop(y-1, self.ysize)],
+                           self.population[torusloop(x, self.xsize)][torusloop(y-1, self.ysize)]]
+                individual.behavior(neighbors, self.requestedPopulation)
+        self.population=copy.deepcopy(self.requestedPopulation)
+        self.repaint()
 
     def paintEvent(self, e):
         painter = QtGui.QPainter(self)
@@ -19,31 +56,25 @@ class Environment(QtWidgets.QWidget):
         brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
         rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
         painter.fillRect(rect, brush)
-        painter.setPen(QtGui.QPen(QtGui.QColor(255, 255, 255), 1))
-        cells = [[QtGui.QPainterPath() for i in range(10)] for j in range(10)]  # Path är lätt att göra customizable
+        painter.setPen(QtGui.QPen(QtGui.QColor(150, 150, 150), 1))
+        cells = [[QtGui.QPainterPath() for j in range(self.ysize)] for i in
+                 range(self.xsize)]  # Path är lätt att göra customizable
         dx = self.width() / len(cells)
         dy = self.height() / len(cells[0])
         for i in range(len(cells)):
             for j in range(len(cells[0])):
-                x0 = j * dx
-                y0 = i * dy
+                x0 = i * dx
+                y0 = j * dy
                 cells[i][j].moveTo(x0, y0)
                 cells[i][j].lineTo(x0, y0 + dy)
                 cells[i][j].lineTo(x0 + dx, y0 + dy)
                 cells[i][j].lineTo(x0 + dx, y0)
                 cells[i][j].lineTo(x0, y0)
-                brush.setColor(QtGui.QColor(int(255 * np.random.rand()), int(255 * np.random.rand()), int(255 * np.random.rand())))
+                color=self.population[i][j].getColor()
+                brush.setColor(QtGui.QColor(color[0], color[1], color[2]))
                 painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
                 painter.drawPath(cells[i][j])
 
-
-class Individual:
-    def __init__(self, xindex, yindex):
-        self.xpos=xindex
-        self.ypos=yindex
-
-    def behavior(self):
-        raise NotImplementedError("All subclasses must have a behavior!")
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self):
