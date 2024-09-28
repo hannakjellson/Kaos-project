@@ -1,4 +1,5 @@
 import numpy as np
+import random
 
 class Cell():
     def __init__(self, specie):
@@ -34,16 +35,12 @@ class Empty_Cell(Cell):
         raise NotImplementedError("An Empty_Cell cannot be updated on its own")
 
 class Fish(Cell):
-    def __init__(self, has_moved=False):
+    def __init__(self):
         """
         Initialize Fish cell
         has_moved: boolean. False if there is a Fish in the Cell, True if the Fish left in this iteration
         """
-        if has_moved:
-            super().__init__(-1)
-        else:
-            super().__init__(1)
-        self.has_moved=has_moved
+        super().__init__(1)
     
     def update(self, local_species, moved_local_species):
         """
@@ -53,34 +50,28 @@ class Fish(Cell):
         """
         # If we have been eaten by a shark already
         if moved_local_species[moved_local_species.get_center()].get_specie() != None:
-            return Shark(), moved_local_species
+            return moved_local_species
         
         move_to=local_species.get_random_common_none_index(moved_local_species)
 
         # If we have somewhere to move
         if move_to is not None:
             moved_local_species.set_specie(move_to,Fish())
-            moved_local_species.set_specie(moved_local_species.get_center(),Fish(True))
-            return Empty_Cell(), moved_local_species
+            return moved_local_species
         
         # If we are stuck
         else: 
-            # We need to go through all these cells again, to see whether they changed
-            moved_local_species[moved_local_species.get_center()]=Cell(0)
-            return self, moved_local_species
+            moved_local_species.set_specie(move_to, Fish())
+            return moved_local_species
 
 class Shark(Cell):
 
-    def __init__(self, has_moved=False):
+    def __init__(self):
         """
         Initialize Shark cell
         has_moved: boolean. False if there is a Shark in the Cell, True if the Shark left in this iteration
         """
-        if has_moved:
-            super().__init__(-2)
-        else:
-            super().__init__(2)
-        self.has_moved=has_moved
+        super().__init__(2)
 
     def update(self, local_species, moved_local_species):
         """
@@ -88,22 +79,25 @@ class Shark(Cell):
         local_species: Grid of this Shark and its surrounding Cells
         moved_local_species: Grid describing how surrounding Cells have already moved in this iteration
         """
-        # 1 and moved to is not 2 or 1=> ok to go to
-        # -1 and moved to is not 2 => ok to go to
-        fish_indices=np.argwhere(np.logical_or(np.logical_and(local_species.get_matrix()==1, moved_local_species.get_matrix() == None), moved_local_species.get_matrix()==-1))
-        if fish_indices.size>0:
-            move_to=np.random.choice(fish_indices)
+        # Find fish indices that have not already been eaten
+        is_fish = np.vectorize(lambda cell: isinstance(cell, Fish))
+        is_empty = np.vectorize(lambda cell: isinstance(cell, Empty_Cell))
+        present_fish_indices=is_fish(local_species.get_matrix())
+        still_empty_indices=is_empty(moved_local_species.get_matrix())
+        stuck_fish_indices=is_fish(moved_local_species.get_matrix())
+        fish_indices=np.argwhere(np.logical_and(present_fish_indices, np.logical_or(still_empty_indices, stuck_fish_indices)))
+        fish_indices=[tuple(fish_index) for fish_index in fish_indices]
+        if len(fish_indices)>0:
+            move_to=random.choice(fish_indices)
             moved_local_species.set_specie(move_to, Shark())
-            moved_local_species.set_specie(moved_local_species.get_center(), Shark(True))
-            return Empty_Cell(), moved_local_species
+            return moved_local_species
         else:
             move_to=local_species.get_random_common_none_index(moved_local_species)
-            print(move_to)
+            # If we have somewhere to move
             if move_to is not None:
-                # If we have somewhere to move
                 moved_local_species.set_specie(move_to,Shark())
-                moved_local_species.set_specie(moved_local_species.get_center(), Shark(True))
-                return Empty_Cell(), moved_local_species
+                return moved_local_species
+            # If we are stuck
             else: 
-                # If we are stuck
-                return self, moved_local_species
+                moved_local_species.set_specie(moved_local_species.get_center(), Shark())
+                return moved_local_species

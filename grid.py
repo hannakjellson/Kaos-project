@@ -126,12 +126,7 @@ class Grid():
             moved_local_species=moved_species_grid.get_local_species(index)
 
             # Updating Cell and moved species grid
-            self.array[i][j], updated_moved_local_species=self.array[i][j].update(local_species, moved_local_species)
+            updated_moved_local_species=self.array[i][j].update(local_species, moved_local_species)
             moved_species_grid.set_local_species(index, updated_moved_local_species)
 
-        # Looping through all empty cells and filling them based on moved_species grid
-        for index in none_indices:
-            i,j=index
-            # Note that movec_species_grid might contain negative values, but not where we originally
-            # had an Empty_Cell, so this update chould be fine.
-            self.array[i][j]=moved_species_grid[i,j]
+        self.array=moved_species_grid.get_matrix()
