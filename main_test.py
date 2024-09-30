@@ -10,6 +10,7 @@ if __name__ == '__main__':
     init_values[7,3]=Fish()
     init_values[7,4]=Shark()
     init_values[7,2]=Shark()
+    init_values[2:6,4]=np.repeat(Fish(), 4)
     init_values[init_values == None]=Empty_Cell()
     pre_grid=Grid(init_values)
     vectorized_specie=np.vectorize(lambda cell: cell.get_specie())

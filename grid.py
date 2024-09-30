@@ -32,15 +32,18 @@ class Grid():
         Return the index of the center cell, in case of using other grids than squares.
         """
         # TODO generalize for other shapes. This works now as it is only called for 3x3 grids.
-        return (1,1)
-
+        return (1,1)      
+    
     def get_local_species(self, cell_id):
         """
         Return the Cell at cell_id and its neighbours.
         cell_id: tuple
         """
         # TODO: make it work at borders
-        return Grid(self.array[cell_id[0]-1:cell_id[0]+2,cell_id[1]-1:cell_id[1]+2])
+        row_indices=[cell_id[0]-1, cell_id[0], (cell_id[0]+1) % self.size[0]]
+        col_indices=[cell_id[1]-1, cell_id[1], (cell_id[1]+1) % self.size[1]]
+        
+        return Grid(self.array[np.ix_(row_indices, col_indices)])
     
     def set_local_species(self, cell_id, local_species):
         """
@@ -50,7 +53,10 @@ class Grid():
         local_species: Grid
         """
         # TODO: make it work at borders
-        self.array[cell_id[0]-1:cell_id[0]+2,cell_id[1]-1:cell_id[1]+2]=local_species.get_matrix()
+        row_indices=[cell_id[0]-1, cell_id[0], (cell_id[0]+1) % self.size[0]]
+        col_indices=[cell_id[1]-1, cell_id[1], (cell_id[1]+1) % self.size[1]]
+        self.array[np.ix_(row_indices, col_indices)]=local_species.get_matrix()
+
 
     def set_specie(self, cell_id, specie):
         """
