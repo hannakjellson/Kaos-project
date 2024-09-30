@@ -15,23 +15,38 @@ def torusloop(pos, size):
 class Environment(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.xsize = 50
-        self.ysize = 50
+        self.xsize = 100
+        self.ysize = 100
 
         self.population = [[TestPopulation.Individual for j in range(self.ysize)] for i in range(self.xsize)]
         self.requestedPopulation = [[TestPopulation.Individual for j in range(self.ysize)] for i in range(self.xsize)]
 
         #  Start population
+        """
         for i in range(self.xsize):
             for j in range(self.ysize):
                 if (i==4 and j==4) or (i==5 and j==4) or (i==5 and j==5) or (i==6 and j==5) or (i==4 and j==6):
-                    self.population[i][j]=TestPopulation.Alive(i,j)
+                    self.population[i][j] = TestPopulation.Alive(i,j)
                 else:
                     self.population[i][j] = TestPopulation.Dead(i, j)
+        """
+        for i in range(self.xsize):
+            for j in range(self.ysize):
+                element=int(4*np.random.rand())
+                match element:
+                    case 0:
+                        self.population[i][j] = TestPopulation.FireElemental(i, j)
+                    case 1:
+                        self.population[i][j] = TestPopulation.AirElemental(i, j)
+                    case 2:
+                        self.population[i][j] = TestPopulation.WaterElemental(i, j)
+                    case 3:
+                        self.population[i][j] = TestPopulation.EarthElemental(i, j)
+
 
         self.day=QtCore.QTimer()
         self.day.timeout.connect(self.develop)
-        self.day.start(200)  #  Tid mellan steg i millisekunder (lägre ger högre framerate)
+        self.day.start(100)  #  Tid mellan steg i millisekunder (lägre ger högre framerate)
 
     def develop(self):
         for row in self.population:
