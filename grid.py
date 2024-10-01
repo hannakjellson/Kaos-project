@@ -1,17 +1,23 @@
 import numpy as np
 import random
 from cell import Cell, Empty_Cell, Fish, Shark
+import pyqtgraph as pg
+from pyqtgraph import QtGui, QtCore, QtWidgets
 
 
-class Grid():
+class Grid(QtWidgets.QWidget):
     def __init__(self, array):
         """
         Initialize the grid
         size: int
         array: numpy.ndarray with Cell elements
         """
+        super().__init__()
         self.size=np.shape(array)
         self.array=array
+        self.day=QtCore.QTimer()
+        self.day.timeout.connect(self.update)
+        self.day.start(500)
 
     def __getitem__(self, cell_id):
         """
@@ -136,3 +142,30 @@ class Grid():
             moved_species_grid.set_local_species(index, updated_moved_local_species)
 
         self.array=moved_species_grid.get_matrix()
+        self.repaint()
+
+    def paintEvent(self, e):
+        painter = QtGui.QPainter(self)
+        brush = QtGui.QBrush()
+        brush.setColor(QtGui.QColor('black'))
+        brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+        rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
+        painter.fillRect(rect, brush)
+        painter.setPen(QtGui.QPen(QtGui.QColor(150, 150, 150), 1))
+        cells = [[QtGui.QPainterPath() for j in range(self.size[1])] for i in
+                 range(self.size[0])]  # Path är lätt att göra customizable
+        dx = self.width() / len(cells)
+        dy = self.height() / len(cells[0])
+        for i in range(len(cells)):
+            for j in range(len(cells[0])):
+                x0 = i * dx
+                y0 = j * dy
+                cells[i][j].moveTo(x0, y0)
+                cells[i][j].lineTo(x0, y0 + dy)
+                cells[i][j].lineTo(x0 + dx, y0 + dy)
+                cells[i][j].lineTo(x0 + dx, y0)
+                cells[i][j].lineTo(x0, y0)
+                #color=self.population[i][j].getColor()
+                brush.setColor(QtGui.QColor("red"))
+                painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
+                painter.drawPath(cells[i][j])

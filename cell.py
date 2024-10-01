@@ -27,6 +27,7 @@ class Empty_Cell(Cell):
         Initialize Empty_Cell
         """    
         super().__init__(None)
+        self.color="white"
   
     def update(self):
         """"
@@ -41,6 +42,7 @@ class Fish(Cell):
         has_moved: boolean. False if there is a Fish in the Cell, True if the Fish left in this iteration
         """
         super().__init__(1)
+        self.color="green"
     
     def update(self, local_species, moved_local_species):
         """
@@ -72,6 +74,7 @@ class Shark(Cell):
         has_moved: boolean. False if there is a Shark in the Cell, True if the Shark left in this iteration
         """
         super().__init__(2)
+        self.color="black"
 
     def update(self, local_species, moved_local_species):
         """
