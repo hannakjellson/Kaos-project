@@ -2,18 +2,22 @@ import numpy as np
 import random
 
 class Cell():
-    def __init__(self, specie):
+    def __init__(self, specie, color):
         """
         Initialize Cell
         specie: int or None
         """
         self.specie=specie
+        self.color=color
 
     def get_specie(self):
         """
         Returns specie
         """
         return self.specie
+    
+    def getColor(self):
+        return self.color
     
     def update(self):
         """
@@ -26,8 +30,7 @@ class Empty_Cell(Cell):
         """
         Initialize Empty_Cell
         """    
-        super().__init__(None)
-        self.color="white"
+        super().__init__(None, (255,255,255))
   
     def update(self):
         """"
@@ -41,8 +44,7 @@ class Fish(Cell):
         Initialize Fish cell
         has_moved: boolean. False if there is a Fish in the Cell, True if the Fish left in this iteration
         """
-        super().__init__(1)
-        self.color="green"
+        super().__init__(1, (255, 100, 100))
     
     def update(self, local_species, moved_local_species):
         """
@@ -73,8 +75,7 @@ class Shark(Cell):
         Initialize Shark cell
         has_moved: boolean. False if there is a Shark in the Cell, True if the Shark left in this iteration
         """
-        super().__init__(2)
-        self.color="black"
+        super().__init__(2, (255, 200, 100))
 
     def update(self, local_species, moved_local_species):
         """

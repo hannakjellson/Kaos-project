@@ -165,7 +165,7 @@ class Grid(QtWidgets.QWidget):
                 cells[i][j].lineTo(x0 + dx, y0 + dy)
                 cells[i][j].lineTo(x0 + dx, y0)
                 cells[i][j].lineTo(x0, y0)
-                #color=self.population[i][j].getColor()
-                brush.setColor(QtGui.QColor("red"))
+                color=self.array[i][j].getColor()
+                brush.setColor(QtGui.QColor(color[0], color[1], color[2]))
                 painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
                 painter.drawPath(cells[i][j])
