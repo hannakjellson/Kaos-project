@@ -45,6 +45,7 @@ class Fish(Cell):
         has_moved: boolean. False if there is a Fish in the Cell, True if the Fish left in this iteration
         """
         super().__init__(1, (255, 100, 100))
+
     
     def update(self, local_species, moved_local_species):
         """
@@ -65,7 +66,6 @@ class Fish(Cell):
         
         # If we are stuck
         else: 
-            moved_local_species.set_specie(move_to, Fish())
             return moved_local_species
 
 class Shark(Cell):
@@ -73,7 +73,6 @@ class Shark(Cell):
     def __init__(self):
         """
         Initialize Shark cell
-        has_moved: boolean. False if there is a Shark in the Cell, True if the Shark left in this iteration
         """
         super().__init__(2, (255, 200, 100))
 

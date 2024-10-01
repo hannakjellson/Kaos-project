@@ -17,7 +17,7 @@ class Grid(QtWidgets.QWidget):
         self.array=array
         self.day=QtCore.QTimer()
         self.day.timeout.connect(self.update)
-        self.day.start(500)
+        self.day.start(40)
 
     def __getitem__(self, cell_id):
         """
