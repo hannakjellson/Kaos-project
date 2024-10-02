@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from cell import Cell, Empty_Cell, Fish, Shark
+from cell import Cell, Empty_Cell, Fish, Shark, Algae, Crill
 import pyqtgraph as pg
 from pyqtgraph import QtGui, QtCore, QtWidgets
 
@@ -76,8 +76,7 @@ class Grid(QtWidgets.QWidget):
         Checks whether the Cell at cell_id is an Empty_Cell
         cell_id: tuple
         """
-        # TODO: Write this using is_instance instead, probably much nicer.
-        return self.array[cell_id[0]][cell_id[1]].get_specie() is None 
+        return isinstance(self.array[cell_id[0]][cell_id[1]], Empty_Cell)
 
     def get_none_indices(self):
         """
@@ -89,6 +88,14 @@ class Grid(QtWidgets.QWidget):
                 if self.__is_none((i,j)):
                     none_indices.append((i, j))
         return none_indices
+    
+    def get_algae_indices(self):
+        algae_indices = []
+        for i, row in enumerate(self.array):
+            for j, element in enumerate(row):
+                if isinstance(self.array[i,j], Algae):
+                    algae_indices.append((i, j))
+        return algae_indices
     
     def get_random_common_none_index(self, other_grid):
         """
@@ -118,11 +125,13 @@ class Grid(QtWidgets.QWidget):
 
         # Split up indices in None indices and other indices.
         none_indices=self.get_none_indices()
-        not_none_indices=[element for element in indices if element not in none_indices]
+        algae_indices=self.get_algae_indices()
+        other_species_indices=[element for element in indices if element not in none_indices and element not in algae_indices]
 
         # Randomize priority. Idea: choose priority rules based on how long they have gone without food and age.
         # Might not be good to observe chaos.
-        np.random.shuffle(not_none_indices) 
+        np.random.shuffle(other_species_indices) 
+        not_none_indices=np.vstack((algae_indices, other_species_indices))
 
         # Creating arrays. 
         # Can probably be written nicer. It's a bit messy with Cells and Grids, but I guess it is good if we want to add more info?

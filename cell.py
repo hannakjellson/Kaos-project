@@ -57,6 +57,18 @@ class Fish(Cell):
         if moved_local_species[moved_local_species.get_center()].get_specie() != None:
             return moved_local_species
         
+        is_crill = np.vectorize(lambda cell: isinstance(cell, Crill))
+        is_empty = np.vectorize(lambda cell: isinstance(cell, Empty_Cell))
+        present_crill_indices=is_crill(local_species.get_matrix())
+        still_empty_indices=is_empty(moved_local_species.get_matrix())
+        stuck_crill_indices=is_crill(moved_local_species.get_matrix())
+        crill_indices=np.argwhere(np.logical_and(present_crill_indices, np.logical_or(still_empty_indices, stuck_crill_indices)))
+        crill_indices=[tuple(crill_index) for crill_index in crill_indices]
+        if len(crill_indices)>0:
+            move_to=random.choice(crill_indices)
+            moved_local_species.set_specie(move_to, Fish())
+            return moved_local_species
+        
         move_to=local_species.get_random_common_none_index(moved_local_species)
 
         # If we have somewhere to move
@@ -74,7 +86,7 @@ class Shark(Cell):
         """
         Initialize Shark cell
         """
-        super().__init__(2, (255, 200, 100))
+        super().__init__(2, (0, 0, 0))
 
     def update(self, local_species, moved_local_species):
         """
@@ -104,3 +116,49 @@ class Shark(Cell):
             else: 
                 moved_local_species.set_specie(moved_local_species.get_center(), Shark())
                 return moved_local_species
+
+class Crill(Cell):
+    def __init__(self):
+        super().__init__(3, (125, 125, 125))
+
+    def update(self, local_species, moved_local_species):
+        """
+        Update Fish Cell based on surroundings
+        local_species: Grid of this Fish and its surrounding Cells
+        moved_local_species: Grid describing how surrounding Cells have already moved in this iteration
+        """
+        # If we have been eaten by a fish already
+        if moved_local_species[moved_local_species.get_center()].get_specie() != None:
+            return moved_local_species
+        
+        is_algae = np.vectorize(lambda cell: isinstance(cell, Algae))
+        is_algae_matrix=is_algae(moved_local_species.get_matrix())
+        algae_indices=np.argwhere(is_algae_matrix)
+        algae_indices=[tuple(algae_index) for algae_index in algae_indices]
+        if len(algae_indices)>0:
+            move_to=random.choice(algae_indices)
+            moved_local_species.set_specie(move_to, Crill())
+            return moved_local_species
+        
+        move_to=local_species.get_random_common_none_index(moved_local_species)
+
+        # If we have somewhere to move
+        if move_to is not None:
+            moved_local_species.set_specie(move_to,Crill())
+            return moved_local_species
+        
+        # If we are stuck
+        else: 
+            return moved_local_species
+
+class Algae(Cell):
+    def __init__(self):
+        """
+        Initialize Algae cell
+        """
+        super().__init__(4, (0, 255, 0))
+
+    def update(self, local_species, moved_local_species):
+        moved_local_species.set_specie(moved_local_species.get_center(), Algae())
+        return moved_local_species
+        
