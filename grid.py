@@ -17,7 +17,7 @@ class Grid(QtWidgets.QWidget):
         self.array=array
         self.day=QtCore.QTimer()
         self.day.timeout.connect(self.update)
-        self.day.start(40)
+        self.day.start(1000)
 
     def __getitem__(self, cell_id):
         """
@@ -97,7 +97,7 @@ class Grid(QtWidgets.QWidget):
                     algae_indices.append((i, j))
         return algae_indices
     
-    def get_random_common_none_index(self, other_grid):
+    def get_common_none_indices(self, other_grid):
         """
         Returns indices where both self and other grids have Empty_Cells
         other_grid: Grid with the same size as self.
@@ -110,8 +110,12 @@ class Grid(QtWidgets.QWidget):
                 cell_id=(i,j)
                 if self.__is_none(cell_id) and other_grid.__is_none(cell_id):
                     common_none_indices.append((i, j))
+        return common_none_indices
 
+
+    def get_random_common_none_index(self, other_grid):
         # Randomly pick an index from the common None indices
+        common_none_indices=self.get_common_none_indices(other_grid)
         if common_none_indices:
             return random.choice(common_none_indices)
         else:
@@ -131,14 +135,20 @@ class Grid(QtWidgets.QWidget):
         # Randomize priority. Idea: choose priority rules based on how long they have gone without food and age.
         # Might not be good to observe chaos.
         np.random.shuffle(other_species_indices) 
-        not_none_indices=np.vstack((algae_indices, other_species_indices))
+        if len(algae_indices)>0:
+            not_none_indices=algae_indices+other_species_indices
+        else:
+            not_none_indices=other_species_indices
 
         # Creating arrays. 
-        # Can probably be written nicer. It's a bit messy with Cells and Grids, but I guess it is good if we want to add more info?
         empty_array=np.empty(self.size, dtype=object)
         empty_array[empty_array==None]=Empty_Cell() 
         moved_species_grid=Grid(empty_array)
 
+        # Setting priorities.
+        for i, index in enumerate(not_none_indices):
+            self.array[index].set_priority(i)
+    
         # Looping through all species.
         for index in not_none_indices:
             # Getting local and moved local species
@@ -150,6 +160,11 @@ class Grid(QtWidgets.QWidget):
             updated_moved_local_species=self.array[i][j].update(local_species, moved_local_species)
             moved_species_grid.set_local_species(index, updated_moved_local_species)
 
+        # Add more Algae, TODO: make proportional to the number of algae there are.
+        probability=0.01
+        common_none_indices=self.get_common_none_indices(moved_species_grid)
+        for index in common_none_indices:
+            moved_species_grid.set_specie(index,moved_species_grid[index].update(probability))
         self.array=moved_species_grid.get_matrix()
         self.repaint()
 
