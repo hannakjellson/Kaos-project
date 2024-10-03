@@ -15,8 +15,9 @@ class Individual:
 
 
 class Dead(Individual):
+    color=(0, 0, 0)
     def __init__(self, xindex, yindex):
-        super(Dead, self).__init__(xindex, yindex, (0, 0, 0))
+        super(Dead, self).__init__(xindex, yindex, Dead.color)
 
     def behavior(self, neighbors, requests):
         crowding = 0
@@ -29,8 +30,9 @@ class Dead(Individual):
 
 
 class Alive(Individual):
+    color = (255, 255, 255)
     def __init__(self, xindex, yindex):
-        super(Alive, self).__init__(xindex, yindex, (255, 255, 255))
+        super(Alive, self).__init__(xindex, yindex, Alive.color)
 
     def behavior(self, neighbors, requests):
         crowding = 0
@@ -42,47 +44,23 @@ class Alive(Individual):
             requests[self.xpos][self.ypos] = Dead(self.xpos, self.ypos)
 
 class FireElemental(Individual):
+    color = (255, 100, 100)
     def __init__(self, xindex, yindex):
-        super(FireElemental, self).__init__(xindex, yindex, (255, 100, 100))
+        super(FireElemental, self).__init__(xindex, yindex, FireElemental.color)
 
     def behavior(self, neighbors, requests):
         weakness=0
-        for individual in neighbors:
-            if isinstance(individual, EarthElemental): weakness += 1
-        if weakness >= 3:
-            requests[self.xpos][self.ypos] = EarthElemental(self.xpos, self.ypos)
-        else:
-            requests[self.xpos][self.ypos] = FireElemental(self.xpos, self.ypos)
-
-class AirElemental(Individual):
-    def __init__(self, xindex, yindex):
-        super(AirElemental, self).__init__(xindex, yindex, (255, 200, 100))
-
-    def behavior(self, neighbors, requests):
-        weakness = 0
-        for individual in neighbors:
-            if isinstance(individual, FireElemental): weakness += 1
-        if weakness >= 3:
-            requests[self.xpos][self.ypos] = FireElemental(self.xpos, self.ypos)
-        else:
-            requests[self.xpos][self.ypos] = AirElemental(self.xpos, self.ypos)
-
-class WaterElemental(Individual):
-    def __init__(self, xindex, yindex):
-        super(WaterElemental, self).__init__(xindex, yindex, (100, 100, 255))
-
-    def behavior(self, neighbors, requests):
-        weakness = 0
         for individual in neighbors:
             if isinstance(individual, AirElemental): weakness += 1
         if weakness >= 3:
             requests[self.xpos][self.ypos] = AirElemental(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = WaterElemental(self.xpos, self.ypos)
+            requests[self.xpos][self.ypos] = FireElemental(self.xpos, self.ypos)
 
-class EarthElemental(Individual):
+class AirElemental(Individual):
+    color = (255, 200, 100)
     def __init__(self, xindex, yindex):
-        super(EarthElemental, self).__init__(xindex, yindex, (50, 200, 50))
+        super(AirElemental, self).__init__(xindex, yindex, AirElemental.color)
 
     def behavior(self, neighbors, requests):
         weakness = 0
@@ -90,5 +68,33 @@ class EarthElemental(Individual):
             if isinstance(individual, WaterElemental): weakness += 1
         if weakness >= 3:
             requests[self.xpos][self.ypos] = WaterElemental(self.xpos, self.ypos)
+        else:
+            requests[self.xpos][self.ypos] = AirElemental(self.xpos, self.ypos)
+
+class WaterElemental(Individual):
+    color = (100, 100, 255)
+    def __init__(self, xindex, yindex):
+        super(WaterElemental, self).__init__(xindex, yindex, WaterElemental.color)
+
+    def behavior(self, neighbors, requests):
+        weakness = 0
+        for individual in neighbors:
+            if isinstance(individual, EarthElemental): weakness += 1
+        if weakness >= 3:
+            requests[self.xpos][self.ypos] = EarthElemental(self.xpos, self.ypos)
+        else:
+            requests[self.xpos][self.ypos] = WaterElemental(self.xpos, self.ypos)
+
+class EarthElemental(Individual):
+    color = (50, 200, 50)
+    def __init__(self, xindex, yindex):
+        super(EarthElemental, self).__init__(xindex, yindex, EarthElemental.color)
+
+    def behavior(self, neighbors, requests):
+        weakness = 0
+        for individual in neighbors:
+            if isinstance(individual, FireElemental): weakness += 1
+        if weakness >= 3:
+            requests[self.xpos][self.ypos] = FireElemental(self.xpos, self.ypos)
         else:
             requests[self.xpos][self.ypos] = EarthElemental(self.xpos, self.ypos)

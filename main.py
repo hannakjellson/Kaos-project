@@ -9,60 +9,59 @@ print("Hello world/Agnes")
 print("Sup world/Daniel")
 print("Yoyo world/Hanna")
 
+
 def torusloop(pos, size):
-    return np.mod(pos+size, size)  # Fixa torus geometri
+    return np.mod(pos + size, size)  # Fixa torus geometri
+
 
 class Environment(QtWidgets.QWidget):
-    def __init__(self):
+    def __init__(self, populationArray):
         super().__init__()
-        self.xsize = 100
-        self.ysize = 100
+        self.xsize = np.shape(populationArray)[0]
+        self.ysize = np.shape(populationArray)[1]
 
-        self.population = [[TestPopulation.Individual for j in range(self.ysize)] for i in range(self.xsize)]
-        self.requestedPopulation = [[TestPopulation.Individual for j in range(self.ysize)] for i in range(self.xsize)]
+        self.population = copy.deepcopy(populationArray)
+        self.requestedPopulation = copy.deepcopy(populationArray)
 
-        #  Start population
-        """
+        self.speciesList = []
         for i in range(self.xsize):
             for j in range(self.ysize):
-                if (i==4 and j==4) or (i==5 and j==4) or (i==5 and j==5) or (i==6 and j==5) or (i==4 and j==6):
-                    self.population[i][j] = TestPopulation.Alive(i,j)
-                else:
-                    self.population[i][j] = TestPopulation.Dead(i, j)
-        """
-        for i in range(self.xsize):
-            for j in range(self.ysize):
-                element=int(4*np.random.rand())
-                match element:
-                    case 0:
-                        self.population[i][j] = TestPopulation.FireElemental(i, j)
-                    case 1:
-                        self.population[i][j] = TestPopulation.AirElemental(i, j)
-                    case 2:
-                        self.population[i][j] = TestPopulation.WaterElemental(i, j)
-                    case 3:
-                        self.population[i][j] = TestPopulation.EarthElemental(i, j)
+                if not self.speciesList.__contains__(type(populationArray[i][j])):
+                    self.speciesList.append(type(populationArray[i][j]))
+        print(self.speciesList)
+        self.species = np.zeros(np.shape(self.speciesList)[0])
+        self.speciesHistory = [[] for i in range(np.shape(self.species)[0])]
+        self.measurePopulations()
 
 
-        self.day=QtCore.QTimer()
+        self.day = QtCore.QTimer()
         self.day.timeout.connect(self.develop)
-        self.day.start(100)  #  Tid mellan steg i millisekunder (lägre ger högre framerate)
+        self.day.start(200)  #  Tid mellan steg i millisekunder (lägre ger högre framerate)
 
     def develop(self):
         for row in self.population:
             for individual in row:
-                x,y = individual.getpos()
-                neighbors=[self.population[torusloop(x-1, self.xsize)][torusloop(y-1, self.ysize)],
-                           self.population[torusloop(x-1, self.xsize)][torusloop(y, self.ysize)],
-                           self.population[torusloop(x-1, self.xsize)][torusloop(y+1, self.ysize)],
-                           self.population[torusloop(x, self.xsize)][torusloop(y+1, self.ysize)],
-                           self.population[torusloop(x+1, self.xsize)][torusloop(y+1, self.ysize)],
-                           self.population[torusloop(x+1, self.xsize)][torusloop(y, self.ysize)],
-                           self.population[torusloop(x+1, self.xsize)][torusloop(y-1, self.ysize)],
-                           self.population[torusloop(x, self.xsize)][torusloop(y-1, self.ysize)]]
+                x, y = individual.getpos()
+                neighbors = [self.population[torusloop(x - 1, self.xsize)][torusloop(y - 1, self.ysize)],
+                             self.population[torusloop(x - 1, self.xsize)][torusloop(y, self.ysize)],
+                             self.population[torusloop(x - 1, self.xsize)][torusloop(y + 1, self.ysize)],
+                             self.population[torusloop(x, self.xsize)][torusloop(y + 1, self.ysize)],
+                             self.population[torusloop(x + 1, self.xsize)][torusloop(y + 1, self.ysize)],
+                             self.population[torusloop(x + 1, self.xsize)][torusloop(y, self.ysize)],
+                             self.population[torusloop(x + 1, self.xsize)][torusloop(y - 1, self.ysize)],
+                             self.population[torusloop(x, self.xsize)][torusloop(y - 1, self.ysize)]]
                 individual.behavior(neighbors, self.requestedPopulation)
-        self.population=copy.deepcopy(self.requestedPopulation)
+        self.population = copy.deepcopy(self.requestedPopulation)
+        self.measurePopulations()
         self.repaint()
+
+    def measurePopulations(self):
+        self.species = np.zeros(np.shape(self.speciesList)[0])
+        for i in range(np.shape(self.speciesList)[0]):
+            for row in self.population:
+                for individual in row:
+                    if isinstance(individual, self.speciesList[i]): self.species[i] += 1
+            self.speciesHistory[i].append(self.species[i])
 
     def paintEvent(self, e):
         painter = QtGui.QPainter(self)
@@ -85,7 +84,7 @@ class Environment(QtWidgets.QWidget):
                 cells[i][j].lineTo(x0 + dx, y0 + dy)
                 cells[i][j].lineTo(x0 + dx, y0)
                 cells[i][j].lineTo(x0, y0)
-                color=self.population[i][j].getColor()
+                color = self.population[i][j].getColor()
                 brush.setColor(QtGui.QColor(color[0], color[1], color[2]))
                 painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
                 painter.drawPath(cells[i][j])
@@ -101,42 +100,57 @@ class MainWindow(QtWidgets.QMainWindow):
         central_widget = QtWidgets.QWidget(self)
         self.setCentralWidget(central_widget)
 
-        # Create the grid area (the 'ocean')
-        ocean = Environment()
+        # Create the grid area (the 'environment')
 
-        # Create the right menu with labels
-        menu_layout = QtWidgets.QVBoxLayout()
+        xsize = 50
+        ysize = 50
+        initpop = [[TestPopulation.Individual for j in range(ysize)] for i in range(xsize)]
+        #  Start population
+        """
+        for i in range(self.xsize):
+            for j in range(self.ysize):
+                if (i==4 and j==4) or (i==5 and j==4) or (i==5 and j==5) or (i==6 and j==5) or (i==4 and j==6):
+                    self.population[i][j] = TestPopulation.Alive(i,j)
+                else:
+                    self.population[i][j] = TestPopulation.Dead(i, j)
+        """
+        for i in range(xsize):
+            for j in range(ysize):
+                element = int(4 * np.random.rand())
+                match element:
+                    case 0:
+                        initpop[i][j] = TestPopulation.FireElemental(i, j)
+                    case 1:
+                        initpop[i][j] = TestPopulation.AirElemental(i, j)
+                    case 2:
+                        initpop[i][j] = TestPopulation.WaterElemental(i, j)
+                    case 3:
+                        initpop[i][j] = TestPopulation.EarthElemental(i, j)
 
-        #set side menu width 
-        menu_width = 150
+        self.environment = Environment(initpop)
+        self.environment.setMinimumSize(600,600)
 
-        menu_label = QtWidgets.QLabel("Initial values: (temporary)", self)
-        menu_label.setFixedWidth(menu_width)
-        menu_layout.addWidget(menu_label)
+        self.historyWidget = pg.PlotWidget()
+        self.historyWidget.setMinimumSize(600,600)
+        self.updatePlot()
 
-        rabbits_label = QtWidgets.QLabel("Rabbits (yellow): 2", self)
-        rabbits_label.setFixedWidth(menu_width)
-        menu_layout.addWidget(rabbits_label)
-
-        wolves_label = QtWidgets.QLabel("Wolves (green): 6", self)
-        wolves_label.setFixedWidth(menu_width)
-        menu_layout.addWidget(wolves_label)
-
-        apples_label = QtWidgets.QLabel("Apples (blue): 3", self)
-        apples_label.setFixedWidth(menu_width)
-        menu_layout.addWidget(apples_label)
-
-        # Spacer to push the labels up
-        menu_layout.addStretch()
-
-        # Layout for main window (grid + menu)
-        main_layout = QtWidgets.QHBoxLayout()
-        main_layout.addWidget(ocean)  # Add the grid (left side)
-        main_layout.addLayout(menu_layout)  # Add the menu (right side)
+        # Layout for main window
+        main_layout = QtWidgets.QGridLayout()
+        main_layout.addWidget(self.environment, 0, 0)
+        main_layout.addWidget(self.historyWidget, 0, 1)
 
         # Set the layout to the central widget
         central_widget.setLayout(main_layout)
 
+        self.plotUpdater=QtCore.QTimer()
+        self.plotUpdater.timeout.connect(self.updatePlot)
+        self.plotUpdater.start(200)
+
+    def updatePlot(self):
+        self.historyWidget.clear()
+        for i in range(np.shape(self.environment.speciesHistory)[0]):
+            self.historyWidget.plot(range(np.shape(self.environment.speciesHistory)[1]), self.environment.speciesHistory[i][:],
+                                    pen=pg.mkPen(color=self.environment.speciesList[i].color, width=5))
 
 if __name__ == '__main__':
     app = pg.mkQApp("Cellular Automata Ecosystem")
