@@ -14,7 +14,7 @@ if __name__ == '__main__':
     grid_size=(100,100)
     init_values=np.empty(grid_size, dtype=object)# Should be an array of cells. Potentially read from interactive window later.
     values = [Crill, Algae, Shark, Fish, Empty_Cell]  # The values to spread
-    probabilities = [0.1, 0.1, 0.1, 0.1, 0.6]  # Probabilities for the values respectively
+    probabilities = [0.1, 0.1, 0.01, 0.1, 0.69]  # Probabilities for the values respectively
     grid = create_random_grid_with_probabilities(grid_size, values, probabilities)
     pre_grid=Grid(grid)
     window=QtWidgets.QMainWindow()
@@ -22,6 +22,14 @@ if __name__ == '__main__':
     window.setCentralWidget(pre_grid)
     window.show()
     pg.exec()
+    plt.figure()
+    algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=pre_grid.get_numbers()
+    plt.plot(algae_nbrs, label='Algae')
+    plt.plot(crill_nbrs, label='Crill')
+    plt.plot(fish_nbrs, label='Fish')
+    plt.plot(shark_nbrs, label='Shark')
+    plt.legend()
+    plt.show()
 
     # Comment: Perhaps its a bit weird that one shark can go randomly if another shark goes for the fish
     # Perhaps it should stay on the same place then?

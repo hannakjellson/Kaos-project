@@ -3,7 +3,7 @@ import random
 from cell import Cell, Empty_Cell, Fish, Shark, Algae, Crill
 import pyqtgraph as pg
 from pyqtgraph import QtGui, QtCore, QtWidgets
-
+import matplotlib.pyplot as plt
 
 class Grid(QtWidgets.QWidget):
     def __init__(self, array):
@@ -18,6 +18,10 @@ class Grid(QtWidgets.QWidget):
         self.day=QtCore.QTimer()
         self.day.timeout.connect(self.update)
         self.day.start(1000)
+        self.algae_nbrs=[]
+        self.crill_nbrs=[]
+        self.fish_nbrs=[]
+        self.shark_nbrs=[]
 
     def __getitem__(self, cell_id):
         """
@@ -96,7 +100,7 @@ class Grid(QtWidgets.QWidget):
                 if isinstance(self.array[i,j], Algae):
                     algae_indices.append((i, j))
         return algae_indices
-    
+        
     def get_common_none_indices(self, other_grid):
         """
         Returns indices where both self and other grids have Empty_Cells
@@ -120,6 +124,22 @@ class Grid(QtWidgets.QWidget):
             return random.choice(common_none_indices)
         else:
             return None  # Return None if no common None indices are found
+        
+    def get_species(self):
+        is_algae=np.vectorize(lambda cell: isinstance(cell, Algae))
+        is_fish=np.vectorize(lambda cell: isinstance(cell, Fish))
+        is_crill=np.vectorize(lambda cell: isinstance(cell, Crill))
+        is_shark=np.vectorize(lambda cell: isinstance(cell, Shark))
+        algaes=self.array[is_algae(self.array)]
+        fish=self.array[is_fish(self.array)]
+        crills=self.array[is_crill(self.array)]
+        sharks=self.array[is_shark(self.array)]
+        print(np.shape(algaes))
+        print(len(algaes))
+        return len(algaes), len(crills), len(fish), len(sharks)
+    
+    def get_numbers(self):
+        return (self.algae_nbrs, self.crill_nbrs, self.fish_nbrs, self.shark_nbrs)
     
     def update(self):
         """
@@ -160,12 +180,17 @@ class Grid(QtWidgets.QWidget):
             updated_moved_local_species=self.array[i][j].update(local_species, moved_local_species)
             moved_species_grid.set_local_species(index, updated_moved_local_species)
 
-        # Add more Algae, TODO: make proportional to the number of algae there are.
+        # Add more Algae, TODO: make proportional to the number of algae there are? NOT GOOD: TOO much algae.
         probability=0.01
         common_none_indices=self.get_common_none_indices(moved_species_grid)
         for index in common_none_indices:
             moved_species_grid.set_specie(index,moved_species_grid[index].update(probability))
         self.array=moved_species_grid.get_matrix()
+        algae_nbr, crill_nbr, fish_nbr, shark_nbr=self.get_species()
+        self.algae_nbrs.append(algae_nbr)
+        self.crill_nbrs.append(crill_nbr)
+        self.fish_nbrs.append(fish_nbr)
+        self.shark_nbrs.append(shark_nbr)
         self.repaint()
 
     def paintEvent(self, e):
