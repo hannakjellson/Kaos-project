@@ -5,10 +5,7 @@ from pyqtgraph import QtGui, QtCore, QtWidgets
 
 import TestPopulation
 
-print("Hello world/Agnes")
-print("Sup world/Daniel")
-print("Yoyo world/Hanna")
-
+timestep=200  # Tid mellan steg i millisekunder (lägre ger högre framerate)
 
 def torusloop(pos, size):
     return np.mod(pos + size, size)  # Fixa torus geometri
@@ -33,10 +30,9 @@ class Environment(QtWidgets.QWidget):
         self.speciesHistory = [[] for i in range(np.shape(self.species)[0])]
         self.measurePopulations()
 
-
         self.day = QtCore.QTimer()
         self.day.timeout.connect(self.develop)
-        self.day.start(200)  #  Tid mellan steg i millisekunder (lägre ger högre framerate)
+        self.day.start(timestep)
 
     def develop(self):
         for row in self.population:
@@ -96,11 +92,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.initUI()
 
     def initUI(self):
-        # Main widget and layout
         central_widget = QtWidgets.QWidget(self)
         self.setCentralWidget(central_widget)
-
-        # Create the grid area (the 'environment')
 
         xsize = 50
         ysize = 50
@@ -114,6 +107,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 else:
                     self.population[i][j] = TestPopulation.Dead(i, j)
         """
+
+        """
         for i in range(xsize):
             for j in range(ysize):
                 element = int(4 * np.random.rand())
@@ -126,12 +121,26 @@ class MainWindow(QtWidgets.QMainWindow):
                         initpop[i][j] = TestPopulation.WaterElemental(i, j)
                     case 3:
                         initpop[i][j] = TestPopulation.EarthElemental(i, j)
+        """
+
+        for i in range(xsize):
+            for j in range(ysize):
+                element = int(4 * np.random.rand())
+                match element:
+                    case 0:
+                        initpop[i][j] = TestPopulation.Agar(i, j)
+                    case 1:
+                        initpop[i][j] = TestPopulation.Bacteria(i, j)
+                    case 2:
+                        initpop[i][j] = TestPopulation.Waste(i, j)
+                    case 3:
+                        initpop[i][j] = TestPopulation.Amoeba(i, j)
 
         self.environment = Environment(initpop)
-        self.environment.setMinimumSize(600,600)
+        self.environment.setMinimumSize(600, 600)
 
         self.historyWidget = pg.PlotWidget()
-        self.historyWidget.setMinimumSize(600,600)
+        self.historyWidget.setMinimumSize(600, 600)
         self.updatePlot()
 
         # Layout for main window
@@ -144,13 +153,13 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.plotUpdater=QtCore.QTimer()
         self.plotUpdater.timeout.connect(self.updatePlot)
-        self.plotUpdater.start(200)
+        self.plotUpdater.start(timestep)
 
     def updatePlot(self):
         self.historyWidget.clear()
         for i in range(np.shape(self.environment.speciesHistory)[0]):
             self.historyWidget.plot(range(np.shape(self.environment.speciesHistory)[1]), self.environment.speciesHistory[i][:],
-                                    pen=pg.mkPen(color=self.environment.speciesList[i].color, width=5))
+                                    pen=pg.mkPen(color=self.environment.speciesList[i].color, width=2))
 
 if __name__ == '__main__':
     app = pg.mkQApp("Cellular Automata Ecosystem")
