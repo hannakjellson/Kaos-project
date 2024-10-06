@@ -4,7 +4,7 @@ class Individual:
         self.ypos = y
         self.color = color
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         raise NotImplementedError("All subclasses must have a behavior!")
 
     def getpos(self):
@@ -20,14 +20,14 @@ class Dead(Individual):
     def __init__(self, x, y):
         super(Dead, self).__init__(x, y, Dead.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         crowding = 0
         for individual in neighbors:
             if isinstance(individual, Alive): crowding += 1
         if crowding == 3:
-            requests[self.xpos][self.ypos] = Alive(self.xpos, self.ypos)
+            return Alive(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = Dead(self.xpos, self.ypos)
+            return Dead(self.xpos, self.ypos)
 
 
 class Alive(Individual):
@@ -36,14 +36,14 @@ class Alive(Individual):
     def __init__(self, x, y):
         super(Alive, self).__init__(x, y, Alive.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         crowding = 0
         for individual in neighbors:
             if isinstance(individual, Alive): crowding += 1
         if crowding == 2 or crowding == 3:
-            requests[self.xpos][self.ypos] = Alive(self.xpos, self.ypos)
+            return Alive(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = Dead(self.xpos, self.ypos)
+            return Dead(self.xpos, self.ypos)
 
 
 class FireElemental(Individual):
@@ -52,14 +52,14 @@ class FireElemental(Individual):
     def __init__(self, x, y):
         super(FireElemental, self).__init__(x, y, FireElemental.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         weakness = 0
         for individual in neighbors:
             if isinstance(individual, AirElemental): weakness += 1
         if weakness >= 3:
-            requests[self.xpos][self.ypos] = AirElemental(self.xpos, self.ypos)
+            return AirElemental(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = FireElemental(self.xpos, self.ypos)
+            return FireElemental(self.xpos, self.ypos)
 
 
 class AirElemental(Individual):
@@ -68,14 +68,14 @@ class AirElemental(Individual):
     def __init__(self, x, y):
         super(AirElemental, self).__init__(x, y, AirElemental.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         weakness = 0
         for individual in neighbors:
             if isinstance(individual, WaterElemental): weakness += 1
         if weakness >= 3:
-            requests[self.xpos][self.ypos] = WaterElemental(self.xpos, self.ypos)
+            return WaterElemental(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = AirElemental(self.xpos, self.ypos)
+            return AirElemental(self.xpos, self.ypos)
 
 
 class WaterElemental(Individual):
@@ -84,14 +84,14 @@ class WaterElemental(Individual):
     def __init__(self, x, y):
         super(WaterElemental, self).__init__(x, y, WaterElemental.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         weakness = 0
         for individual in neighbors:
             if isinstance(individual, EarthElemental): weakness += 1
         if weakness >= 3:
-            requests[self.xpos][self.ypos] = EarthElemental(self.xpos, self.ypos)
+            return EarthElemental(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = WaterElemental(self.xpos, self.ypos)
+            return WaterElemental(self.xpos, self.ypos)
 
 
 class EarthElemental(Individual):
@@ -100,14 +100,14 @@ class EarthElemental(Individual):
     def __init__(self, x, y):
         super(EarthElemental, self).__init__(x, y, EarthElemental.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         weakness = 0
         for individual in neighbors:
             if isinstance(individual, FireElemental): weakness += 1
         if weakness >= 3:
-            requests[self.xpos][self.ypos] = FireElemental(self.xpos, self.ypos)
+            return FireElemental(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = EarthElemental(self.xpos, self.ypos)
+            return EarthElemental(self.xpos, self.ypos)
 
 
 class Agar(Individual):
@@ -116,16 +116,16 @@ class Agar(Individual):
     def __init__(self, x, y):
         super(Agar, self).__init__(x, y, Agar.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         eaten = False
         for individual in neighbors:
             if isinstance(individual, Bacteria):
                 eaten = True
                 break
         if eaten:
-            requests[self.xpos][self.ypos] = Bacteria(self.xpos, self.ypos)
+            return Bacteria(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = Agar(self.xpos, self.ypos)
+            return Agar(self.xpos, self.ypos)
 
 
 class Bacteria(Individual):
@@ -134,15 +134,15 @@ class Bacteria(Individual):
     def __init__(self, x, y):
         super(Bacteria, self).__init__(x, y, Bacteria.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         crowding = 0
         for individual in neighbors:
-            if isinstance(individual, Bacteria) or isinstance(individual, Waste):
+            if isinstance(individual, Bacteria) or isinstance(individual, Waste) or isinstance(individual, Amoeba):
                 crowding += 1
         if crowding >= 6:
-            requests[self.xpos][self.ypos] = Waste(self.xpos, self.ypos)
+            return Waste(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = Bacteria(self.xpos, self.ypos)
+            return Bacteria(self.xpos, self.ypos)
 
 
 class Waste(Individual):
@@ -151,16 +151,16 @@ class Waste(Individual):
     def __init__(self, x, y):
         super(Waste, self).__init__(x, y, Waste.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         eaten = False
         for individual in neighbors:
             if isinstance(individual, Amoeba):
                 eaten = True
                 break
         if eaten:
-            requests[self.xpos][self.ypos] = Amoeba(self.xpos, self.ypos)
+            return Amoeba(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = Waste(self.xpos, self.ypos)
+            return Waste(self.xpos, self.ypos)
 
 
 class Amoeba(Individual):
@@ -169,13 +169,13 @@ class Amoeba(Individual):
     def __init__(self, x, y):
         super(Amoeba, self).__init__(x, y, Amoeba.color)
 
-    def behavior(self, neighbors, requests):
+    def behavior(self, neighbors):
         feeding = False
         for individual in neighbors:
             if isinstance(individual, Waste):
                 feeding = True
                 break
         if feeding:
-            requests[self.xpos][self.ypos] = Agar(self.xpos, self.ypos)
+            return Agar(self.xpos, self.ypos)
         else:
-            requests[self.xpos][self.ypos] = Amoeba(self.xpos, self.ypos)
+            return Amoeba(self.xpos, self.ypos)

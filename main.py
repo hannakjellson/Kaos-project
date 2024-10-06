@@ -1,11 +1,14 @@
 import copy
 import numpy as np
 import pyqtgraph as pg
+from pyqtgraph.dockarea.DockArea import DockArea
+from pyqtgraph.dockarea.Dock import Dock
 from pyqtgraph import QtGui, QtCore, QtWidgets
 
 import TestPopulation
 
 timestep=200  # Tid mellan steg i millisekunder (lägre ger högre framerate)
+seed=1
 
 def torusloop(pos, size):
     return np.mod(pos + size, size)  # Fixa torus geometri
@@ -46,7 +49,7 @@ class Environment(QtWidgets.QWidget):
                              self.population[torusloop(x + 1, self.xsize)][torusloop(y, self.ysize)],
                              self.population[torusloop(x + 1, self.xsize)][torusloop(y - 1, self.ysize)],
                              self.population[torusloop(x, self.xsize)][torusloop(y - 1, self.ysize)]]
-                individual.behavior(neighbors, self.requestedPopulation)
+                self.requestedPopulation[x][y] = individual.behavior(neighbors)
         self.population = copy.deepcopy(self.requestedPopulation)
         self.measurePopulations()
         self.repaint()
@@ -86,19 +89,15 @@ class Environment(QtWidgets.QWidget):
                 painter.drawPath(cells[i][j])
 
 
-class MainWindow(QtWidgets.QMainWindow):
-    def __init__(self):
+class CellularAutomataSimulator(QtWidgets.QWidget):
+    def __init__(self, skew):
         super().__init__()
-        self.initUI()
-
-    def initUI(self):
-        central_widget = QtWidgets.QWidget(self)
-        self.setCentralWidget(central_widget)
 
         xsize = 50
         ysize = 50
         initpop = [[TestPopulation.Individual for j in range(ysize)] for i in range(xsize)]
         #  Start population
+        np.random.seed(seed)
         """
         for i in range(self.xsize):
             for j in range(self.ysize):
@@ -126,6 +125,7 @@ class MainWindow(QtWidgets.QMainWindow):
         for i in range(xsize):
             for j in range(ysize):
                 element = int(4 * np.random.rand())
+                if i == xsize/2 and j == ysize/2: element = torusloop(element+skew, 4)
                 match element:
                     case 0:
                         initpop[i][j] = TestPopulation.Agar(i, j)
@@ -137,10 +137,10 @@ class MainWindow(QtWidgets.QMainWindow):
                         initpop[i][j] = TestPopulation.Amoeba(i, j)
 
         self.environment = Environment(initpop)
-        self.environment.setMinimumSize(600, 600)
+        self.environment.setMinimumSize(400, 200)
 
         self.historyWidget = pg.PlotWidget()
-        self.historyWidget.setMinimumSize(600, 600)
+        self.historyWidget.setMinimumSize(200, 200)
         self.updatePlot()
 
         # Layout for main window
@@ -149,7 +149,7 @@ class MainWindow(QtWidgets.QMainWindow):
         main_layout.addWidget(self.historyWidget, 0, 1)
 
         # Set the layout to the central widget
-        central_widget.setLayout(main_layout)
+        self.setLayout(main_layout)
 
         self.plotUpdater=QtCore.QTimer()
         self.plotUpdater.timeout.connect(self.updatePlot)
@@ -163,8 +163,22 @@ class MainWindow(QtWidgets.QMainWindow):
 
 if __name__ == '__main__':
     app = pg.mkQApp("Cellular Automata Ecosystem")
-    window = MainWindow()
+    window = QtWidgets.QMainWindow()
     window.resize(1200, 600)
+    dockarea=DockArea()
+    window.setCentralWidget(dockarea)
+
+    dock1=Dock("Run 1", size=(1,1))
+    dockarea.addDock(dock1, 'top')
+    sim1=CellularAutomataSimulator(0)
+    dock1.addWidget(sim1)
+
+    dock2=Dock("Run 2", size=(1,1))
+    dockarea.addDock(dock2, 'bottom', dock1)
+    sim2=CellularAutomataSimulator(1)
+    dock2.addWidget(sim2)
+
+
     window.show()
 
     pg.exec()
