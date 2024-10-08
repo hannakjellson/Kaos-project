@@ -107,7 +107,7 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
                     self.population[i][j] = TestPopulation.Dead(i, j)
         """
 
-        
+        counts = {'fire' : 0, 'air' : 0, 'water' : 0, 'earth' : 0}
         for i in range(xsize):
             for j in range(ysize):
                 element = int(4 * np.random.rand())
@@ -115,12 +115,18 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
                 match element:
                     case 0:
                         initpop[i][j] = TestPopulation.FireElemental(i, j)
+                        counts['fire'] += 1
                     case 1:
                         initpop[i][j] = TestPopulation.AirElemental(i, j)
+                        counts['air'] += 1
                     case 2:
                         initpop[i][j] = TestPopulation.WaterElemental(i, j)
+                        counts['water'] += 1
                     case 3:
                         initpop[i][j] = TestPopulation.EarthElemental(i, j)
+                        counts['earth'] += 1
+        for key in counts:
+            print(f"{key} : {counts[key]}")
         
         '''
         for i in range(xsize):
