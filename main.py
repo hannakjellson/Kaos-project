@@ -107,10 +107,11 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
                     self.population[i][j] = TestPopulation.Dead(i, j)
         """
 
-        """
+        
         for i in range(xsize):
             for j in range(ysize):
                 element = int(4 * np.random.rand())
+                if i == xsize/2 and j == ysize/2: element = torusloop(element+skew, 4)
                 match element:
                     case 0:
                         initpop[i][j] = TestPopulation.FireElemental(i, j)
@@ -120,8 +121,8 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
                         initpop[i][j] = TestPopulation.WaterElemental(i, j)
                     case 3:
                         initpop[i][j] = TestPopulation.EarthElemental(i, j)
-        """
-
+        
+        '''
         for i in range(xsize):
             for j in range(ysize):
                 element = int(4 * np.random.rand())
@@ -135,6 +136,7 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
                         initpop[i][j] = TestPopulation.Waste(i, j)
                     case 3:
                         initpop[i][j] = TestPopulation.Amoeba(i, j)
+        '''
 
         self.environment = Environment(initpop)
         self.environment.setMinimumSize(400, 200)
