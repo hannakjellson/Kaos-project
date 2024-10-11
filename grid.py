@@ -4,9 +4,10 @@ from cell import Cell, Empty_Cell, Fish, Shark, Algae, Crill
 import pyqtgraph as pg
 from pyqtgraph import QtGui, QtCore, QtWidgets
 import matplotlib.pyplot as plt
-
-class Grid(QtWidgets.QWidget):
-    def __init__(self, array):
+# QtWidgets.QWidget
+# TODO: They can lay eggs instead. Try to make the births match what is in lotka volterra, remember that we have andelar in Lotka. Perhaps reset the algae thing. Note that the initial conditions in Lotka are very small. How to handle in this model?
+class Grid():
+    def __init__(self, array, allow_escape=None):
         """
         Initialize the grid
         size: int
@@ -15,13 +16,14 @@ class Grid(QtWidgets.QWidget):
         super().__init__()
         self.size=np.shape(array)
         self.array=array
-        self.day=QtCore.QTimer()
-        self.day.timeout.connect(self.update)
-        self.day.start(1000)
+        # self.day=QtCore.QTimer()
+        # self.day.timeout.connect(self.update)
+        # self.day.start(10)
         self.algae_nbrs=[]
         self.crill_nbrs=[]
         self.fish_nbrs=[]
         self.shark_nbrs=[]
+        self.allow_escape=False if allow_escape is None else allow_escape
 
     def __getitem__(self, cell_id):
         """
@@ -62,7 +64,6 @@ class Grid(QtWidgets.QWidget):
         cell_id: tuple
         local_species: Grid
         """
-        # TODO: make it work at borders
         row_indices=[cell_id[0]-1, cell_id[0], (cell_id[0]+1) % self.size[0]]
         col_indices=[cell_id[1]-1, cell_id[1], (cell_id[1]+1) % self.size[1]]
         self.array[np.ix_(row_indices, col_indices)]=local_species.get_matrix()
@@ -74,68 +75,78 @@ class Grid(QtWidgets.QWidget):
         cell_id: tuple
         """
         self.array[cell_id]=specie
+    
+    def where_none(self):
+        is_none=np.vectorize(lambda cell: isinstance(cell, Empty_Cell))
+        return is_none(self.array)
 
-    def __is_none(self, cell_id):
-        """
-        Checks whether the Cell at cell_id is an Empty_Cell
-        cell_id: tuple
-        """
-        return isinstance(self.array[cell_id[0]][cell_id[1]], Empty_Cell)
+    def where_algae(self):
+        is_algae=np.vectorize(lambda cell: isinstance(cell, Algae))
+        return is_algae(self.array)
+    
+    def where_crill(self):
+        is_crill=np.vectorize(lambda cell: isinstance(cell, Crill))
+        return is_crill(self.array)
+    
+    def where_fish(self):
+        is_fish=np.vectorize(lambda cell: isinstance(cell, Fish))
+        return is_fish(self.array)
+    
+    def where_shark(self):
+        is_shark=np.vectorize(lambda cell: isinstance(cell, Shark))
+        return is_shark(self.array)
 
     def get_none_indices(self):
         """
         Returns all indices where the grid has Empty_Cells.
         """
-        none_indices = []
-        for i, row in enumerate(self.array):
-            for j, element in enumerate(row):
-                if self.__is_none((i,j)):
-                    none_indices.append((i, j))
+        none_indices=np.argwhere(self.where_none())
+        none_indices=[tuple(none_index) for none_index in none_indices]
         return none_indices
     
     def get_algae_indices(self):
-        algae_indices = []
-        for i, row in enumerate(self.array):
-            for j, element in enumerate(row):
-                if isinstance(self.array[i,j], Algae):
-                    algae_indices.append((i, j))
+        algae_indices=np.argwhere(self.where_algae())
+        algae_indices=[tuple(algae_index) for algae_index in algae_indices]
         return algae_indices
+    
+    def get_crill_indices(self):
+        crill_indices=np.argwhere(self.where_crill())
+        crill_indices=[tuple(crill_index) for crill_index in crill_indices]
+        return crill_indices
+    
+    def get_fish_indices(self):
+        fish_indices=np.argwhere(self.where_fish())
+        fish_indices=[tuple(fish_index) for fish_index in fish_indices]
+        return fish_indices
+    
+    def get_shark_indices(self):
+        shark_indices=np.argwhere(self.where_shark())
+        shark_indices=[tuple(shark_index) for shark_index in shark_indices]
+        return shark_indices
         
     def get_common_none_indices(self, other_grid):
         """
         Returns indices where both self and other grids have Empty_Cells
         other_grid: Grid with the same size as self.
         """
-        common_none_indices = []
-
-        # Loop through all indices to find where both matrices have None
-        for i in range(self.size[0]):
-            for j in range(self.size[1]):
-                cell_id=(i,j)
-                if self.__is_none(cell_id) and other_grid.__is_none(cell_id):
-                    common_none_indices.append((i, j))
+        common_none_indices = np.argwhere(np.logical_and(self.where_none(), other_grid.where_none()))
+        common_none_indices=[tuple(common_none_index) for common_none_index in common_none_indices]
         return common_none_indices
 
 
-    def get_random_common_none_index(self, other_grid):
+    def get_random_common_none_index(self, other_grid, size):
         # Randomly pick an index from the common None indices
         common_none_indices=self.get_common_none_indices(other_grid)
         if common_none_indices:
-            return random.choice(common_none_indices)
+            return random.choice(common_none_indices) if size==1 else random.sample(common_none_indices, size)
         else:
             return None  # Return None if no common None indices are found
         
     def get_species(self):
-        is_algae=np.vectorize(lambda cell: isinstance(cell, Algae))
-        is_fish=np.vectorize(lambda cell: isinstance(cell, Fish))
-        is_crill=np.vectorize(lambda cell: isinstance(cell, Crill))
-        is_shark=np.vectorize(lambda cell: isinstance(cell, Shark))
-        algaes=self.array[is_algae(self.array)]
-        fish=self.array[is_fish(self.array)]
-        crills=self.array[is_crill(self.array)]
-        sharks=self.array[is_shark(self.array)]
-        print(np.shape(algaes))
-        print(len(algaes))
+        algaes=self.array[self.where_algae()]
+        crills=self.array[self.where_crill()]
+        fish=self.array[self.where_fish()]
+        sharks=self.array[self.where_shark()]
         return len(algaes), len(crills), len(fish), len(sharks)
     
     def get_numbers(self):
@@ -145,30 +156,34 @@ class Grid(QtWidgets.QWidget):
         """
         Updates the grid
         """
-        indices = [(i, j) for i in range(self.size[0]) for j in range(self.size[1])]
 
-        # Split up indices in None indices and other indices.
-        none_indices=self.get_none_indices()
+        # Split up indices in different species
         algae_indices=self.get_algae_indices()
-        other_species_indices=[element for element in indices if element not in none_indices and element not in algae_indices]
+        shark_indices=self.get_shark_indices()
+        fish_indices=self.get_fish_indices()
+        crill_indices=self.get_crill_indices()
 
-        # Randomize priority. Idea: choose priority rules based on how long they have gone without food and age.
-        # Might not be good to observe chaos.
-        np.random.shuffle(other_species_indices) 
-        if len(algae_indices)>0:
-            not_none_indices=algae_indices+other_species_indices
-        else:
-            not_none_indices=other_species_indices
+        other_species_indices=shark_indices+fish_indices+crill_indices
+        if self.allow_escape:
+            # Randomize order in which they are updates s.t. fish and crill can escape. Algae can not escape.
+            np.random.shuffle(other_species_indices) 
+
+        not_none_indices=algae_indices+other_species_indices
 
         # Creating arrays. 
         empty_array=np.empty(self.size, dtype=object)
         empty_array[empty_array==None]=Empty_Cell() 
         moved_species_grid=Grid(empty_array)
 
-        # Setting priorities.
+        # Setting priorities. Probably only necessary if we allow escapes
         for i, index in enumerate(not_none_indices):
             self.array[index].set_priority(i)
     
+        # For keeping track of how many new eggs have been layn. If a species does not lay egg, this remains zero.
+        num_crill_meals=0
+        num_fish_meals=0
+        num_shark_meals=0
+
         # Looping through all species.
         for index in not_none_indices:
             # Getting local and moved local species
@@ -180,41 +195,66 @@ class Grid(QtWidgets.QWidget):
             updated_moved_local_species=self.array[i][j].update(local_species, moved_local_species)
             moved_species_grid.set_local_species(index, updated_moved_local_species)
 
-        # Add more Algae, TODO: make proportional to the number of algae there are? NOT GOOD: TOO much algae.
-        probability=0.01
-        common_none_indices=self.get_common_none_indices(moved_species_grid)
-        for index in common_none_indices:
-            moved_species_grid.set_specie(index,moved_species_grid[index].update(probability))
+            # Updating the number of kids
+            current_specie=self.array[index]
+            if (not isinstance(current_specie, Algae)) and current_specie.had_meal and current_specie.lay_egg:
+                if isinstance(current_specie, Crill):
+                    num_crill_meals+=1
+                elif isinstance(current_specie, Fish):
+                    num_fish_meals+=1
+                elif isinstance(current_specie, Shark):
+                    num_shark_meals+=1
+
+        # Add new species and algae at random
+        algae_nbr, _, _, _=self.get_species()
+        num_new_algae=int(algae_nbr*0.8)
+        num_new_crill=int(num_crill_meals*4/3)
+        num_new_fish=int(num_fish_meals*1/2)
+        num_new_shark=int(num_shark_meals)
+        new_species=[Shark(0,0,False) for i in range(num_new_shark)]+[Fish(0,0,False) for i in range(num_new_fish)]+ [Crill(0,0,False) for i in range(num_new_crill)]+[Algae() for i in range(num_new_algae)]
+        random.shuffle(new_species)
+        none_indices=moved_species_grid.get_none_indices() # Could also do this with common none indices, depends on if we allow things to pop up where something just left.
+        nbr_of_places=len(none_indices) if len(none_indices)<len(new_species) else len(new_species)
+        new_kid_indices=random.sample(none_indices, nbr_of_places)
+        for i, index in enumerate(new_kid_indices):
+            moved_species_grid.set_specie(index, new_species[i])
+
+        # Update the matrix
+        # print(moved_species_grid.get_none_indices())
         self.array=moved_species_grid.get_matrix()
+
+        # Keeping track of the number of each species
         algae_nbr, crill_nbr, fish_nbr, shark_nbr=self.get_species()
         self.algae_nbrs.append(algae_nbr)
         self.crill_nbrs.append(crill_nbr)
         self.fish_nbrs.append(fish_nbr)
         self.shark_nbrs.append(shark_nbr)
-        self.repaint()
 
-    def paintEvent(self, e):
-        painter = QtGui.QPainter(self)
-        brush = QtGui.QBrush()
-        brush.setColor(QtGui.QColor('black'))
-        brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-        rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
-        painter.fillRect(rect, brush)
-        painter.setPen(QtGui.QPen(QtGui.QColor(150, 150, 150), 1))
-        cells = [[QtGui.QPainterPath() for j in range(self.size[1])] for i in
-                 range(self.size[0])]  # Path är lätt att göra customizable
-        dx = self.width() / len(cells)
-        dy = self.height() / len(cells[0])
-        for i in range(len(cells)):
-            for j in range(len(cells[0])):
-                x0 = i * dx
-                y0 = j * dy
-                cells[i][j].moveTo(x0, y0)
-                cells[i][j].lineTo(x0, y0 + dy)
-                cells[i][j].lineTo(x0 + dx, y0 + dy)
-                cells[i][j].lineTo(x0 + dx, y0)
-                cells[i][j].lineTo(x0, y0)
-                color=self.array[i][j].getColor()
-                brush.setColor(QtGui.QColor(color[0], color[1], color[2]))
-                painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
-                painter.drawPath(cells[i][j])
+        # Repainting
+        # self.repaint()
+
+    # def paintEvent(self, e):
+    #     painter = QtGui.QPainter(self)
+    #     brush = QtGui.QBrush()
+    #     brush.setColor(QtGui.QColor('black'))
+    #     brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+    #     rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
+    #     painter.fillRect(rect, brush)
+    #     painter.setPen(QtGui.QPen(QtGui.QColor(150, 150, 150), 1))
+    #     cells = [[QtGui.QPainterPath() for j in range(self.size[1])] for i in
+    #              range(self.size[0])]  # Path är lätt att göra customizable
+    #     dx = self.width() / len(cells)
+    #     dy = self.height() / len(cells[0])
+    #     for i in range(len(cells)):
+    #         for j in range(len(cells[0])):
+    #             x0 = i * dx
+    #             y0 = j * dy
+    #             cells[i][j].moveTo(x0, y0)
+    #             cells[i][j].lineTo(x0, y0 + dy)
+    #             cells[i][j].lineTo(x0 + dx, y0 + dy)
+    #             cells[i][j].lineTo(x0 + dx, y0)
+    #             cells[i][j].lineTo(x0, y0)
+    #             color=self.array[i][j].getColor()
+    #             brush.setColor(QtGui.QColor(color[0], color[1], color[2]))
+    #             painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
+    #             painter.drawPath(cells[i][j])

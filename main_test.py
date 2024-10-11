@@ -10,18 +10,22 @@ def create_random_grid_with_probabilities(size, values, probabilities):
     return np.array([[random.choices(values, probabilities)[0]() for _ in range(size[0])] for _ in range(size[1])])
 
 if __name__ == '__main__':  
-    app=pg.mkQApp("WATOR")
+    # app=pg.mkQApp("WATOR")
+    random.seed(2)
+    np.random.seed(2)
     grid_size=(100,100)
-    init_values=np.empty(grid_size, dtype=object)# Should be an array of cells. Potentially read from interactive window later.
-    values = [Crill, Algae, Shark, Fish, Empty_Cell]  # The values to spread
-    probabilities = [0.1, 0.1, 0.01, 0.1, 0.69]  # Probabilities for the values respectively
+    init_values=np.empty(grid_size, dtype=object) # Should be an array of cells. Potentially read from interactive window later.
+    values = [Crill, Algae, Shark, Fish, Empty_Cell] # The values to spread
+    probabilities = [0.20, 0.20, 0.20, 0.20, 0.20]  # Probabilities for the values respectively
     grid = create_random_grid_with_probabilities(grid_size, values, probabilities)
-    pre_grid=Grid(grid)
-    window=QtWidgets.QMainWindow()
-    window.resize(1200,600)
-    window.setCentralWidget(pre_grid)
-    window.show()
-    pg.exec()
+    pre_grid=Grid(grid, allow_escape=True)
+    # window=QtWidgets.QMainWindow()
+    # window.resize(1200,600)
+    # window.setCentralWidget(pre_grid)
+    # window.show()
+    # pg.exec()
+    for i in range(10):
+        pre_grid.update()
     plt.figure()
     algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=pre_grid.get_numbers()
     plt.plot(algae_nbrs, label='Algae')
