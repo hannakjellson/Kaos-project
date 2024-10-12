@@ -43,18 +43,22 @@ class Empty_Cell(Cell):
 
 class Shark(Cell):
 
-    def __init__(self, age=None, meals=None, had_meal=None):
+    def __init__(self, age=None, meals=None, had_meal=None, max_age=50, lay_egg=False, meals_for_birth=1, separate_gender=False):
         """
         Initialize Shark cell
         """
-        self.max_age=5
+        self.max_age=max_age
+        self.lay_egg=lay_egg
         self.age=random.randint(0,self.max_age) if age is None else age
         self.meals=random.randint(0,1) if meals is None else meals
         self.had_meal=np.random.choice([True, False]) if had_meal is None else had_meal
-        super().__init__((50, 50, 50))
-        self.meals_for_birth=1
-        self.num_kids=1
-        self.lay_egg=True
+        self.meals_for_birth=meals_for_birth
+        self.separate_gender=separate_gender
+        if separate_gender:
+            self.is_woman = np.random.choice([True, False])
+        else:
+            self.is_woman=True
+        super().__init__((50, 50, 50)) if self.is_woman else super().__init__((0, 0, 0))
 
     def update(self, local_species, moved_local_species):
         """
@@ -90,8 +94,8 @@ class Shark(Cell):
                 # If we have somewhere to move
             if move_to is not None:
                 # If possible, give birth to a new shark. If we are stuck, we simply do not give birth.
-                if (not self.lay_egg) and pre_had_meal==True and pre_meals!=0 and pre_meals % self.meals_for_birth == 0:
-                    moved_local_species.set_specie(moved_local_species.get_center(), Shark(0,0,False))
+                if (not self.lay_egg) and self.is_woman and pre_had_meal==True and pre_meals!=0 and pre_meals % self.meals_for_birth == 0:
+                    moved_local_species.set_specie(moved_local_species.get_center(), Shark(0,0,False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
                 moved_local_species.set_specie(move_to,self)
             # If we are stuck. 
             else: 
@@ -100,19 +104,23 @@ class Shark(Cell):
         return moved_local_species
     
 class Fish(Cell):
-    def __init__(self, age=None, meals=None, had_meal=None):
+    def __init__(self, age=None, meals=None, had_meal=None, max_age=50, lay_egg=False, meals_for_birth=1, separate_gender=False):
         """
         Initialize Fish cell
         has_moved: boolean. False if there is a Fish in the Cell, True if the Fish left in this iteration
         """
-        self.max_age=100
+        self.max_age=max_age
+        self.lay_egg=lay_egg
         self.age=random.randint(0,self.max_age) if age is None else age
         self.meals=random.randint(0,2) if meals is None else meals
         self.had_meal=np.random.choice([True, False]) if had_meal is None else had_meal
-        super().__init__((255, 0, 0))
-        self.meals_for_birth=2
-        self.num_kids=1
-        self.lay_egg=True
+        self.meals_for_birth=meals_for_birth
+        self.separate_gender=separate_gender
+        if separate_gender:
+            self.is_woman = np.random.choice([True, False])
+        else:
+            self.is_woman=True
+        super().__init__((255, 0, 0)) if self.is_woman else super().__init__((200, 0, 0))
     
     def update(self, local_species, moved_local_species):
         """
@@ -143,8 +151,8 @@ class Fish(Cell):
 
             # If we have somewhere to move
             if move_to is not None:
-                if (not self.lay_egg) and pre_had_meal and pre_meals!=0 and pre_meals % self.meals_for_birth == 0:
-                    moved_local_species.set_specie(moved_local_species.get_center(), Fish(0,0,False))
+                if (not self.lay_egg) and self.is_woman and pre_had_meal and pre_meals!=0 and pre_meals % self.meals_for_birth == 0:
+                    moved_local_species.set_specie(moved_local_species.get_center(), Fish(0, 0, False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
                 moved_local_species.set_specie(move_to, self)         
             # If we are stuck
             else: 
@@ -153,15 +161,19 @@ class Fish(Cell):
         return moved_local_species
 
 class Crill(Cell):
-    def __init__(self, age=None, meals=None, had_meal=None):
-        self.max_age=100
+    def __init__(self, age=None, meals=None, had_meal=None, max_age=50, lay_egg=False, meals_for_birth=1, separate_gender=False):
+        self.max_age=max_age
+        self.lay_egg=lay_egg
         self.age=random.randint(0,self.max_age) if age is None else age
-        self.meals=random.randint(0,3) if meals is None else meals# Improve initialization.
+        self.meals=random.randint(0,1) if meals is None else meals
         self.had_meal=np.random.choice([True, False]) if had_meal is None else had_meal
-        super().__init__((100, 100, 255))
-        self.meals_for_birth=3
-        self.num_kids=4
-        self.lay_egg=True
+        self.meals_for_birth=meals_for_birth
+        self.separate_gender=separate_gender
+        if separate_gender:
+            self.is_woman = np.random.choice([True, False])
+        else:
+            self.is_woman=True
+        super().__init__((100, 100, 255)) if self.is_woman else super().__init__((50, 50, 220))
 
     def update(self, local_species, moved_local_species):
         """
@@ -189,8 +201,8 @@ class Crill(Cell):
 
             # If we have somewhere to move
             if move_to is not None:
-                if (not self.lay_egg) and pre_had_meal and pre_meals % self.meals_for_birth == 0:
-                    moved_local_species.set_specie(moved_local_species.get_center(), Crill(0,0,False))
+                if (not self.lay_egg) and self.is_woman and pre_had_meal and pre_meals % self.meals_for_birth == 0:
+                    moved_local_species.set_specie(moved_local_species.get_center(), Crill(0,0,False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
                 moved_local_species.set_specie(move_to, self)
                  
             # If we are stuck
@@ -209,4 +221,3 @@ class Algae(Cell):
     def update(self, local_species, moved_local_species):
         moved_local_species.set_specie(moved_local_species.get_center(), Algae())
         return moved_local_species
-        
