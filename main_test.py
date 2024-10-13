@@ -116,9 +116,9 @@ if __name__ == '__main__':
     # # Create grid that oscillates with three species
     # pre_grid=create_oscillation_with_three_grid(seed=3)
 
-    # # Create grid that oscillates with four species
-    # probabilities=[0.20, 0.20, 0.20, 0.20, 0.20]
-    # pre_grid=create_oscillation_with_four_grid(probabilities, seed=2)
+    # Create grid that oscillates with four species
+    probabilities=[0.20, 0.19, 0.41, 0.20, 0]
+    pre_grid=create_oscillation_with_four_grid(probabilities, seed=2)
 
     # If we want to plot the grid. This requires grid to inherit from QWidgets.QWidget, 
     # and for all code in grid.py that is commented out to be uncommented.
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # pg.exec()
 
     # # If we just want to see the number of species as a function of time.
-    # run_update(pre_grid, iter=100, plot_number_of_species=True)
+    run_update(pre_grid, iter=1000, plot_number_of_species=True)
 
     # # Create two grids to calculate Lyapunov Exponents
     # probabilities_1=[0.20, 0.20, 0.20, 0.20, 0.20]
@@ -184,39 +184,39 @@ if __name__ == '__main__':
     # plt.legend()
     # plt.show()
 
-    # Try to parallelize
-    tot_algae_nbrs=None
-    tot_crill_nbrs=None
-    tot_fish_nbrs=None
-    tot_shark_nbrs=None
-    nbr_of_seeds=4
-    iterations=10
+    # # Try to parallelize
+    # tot_algae_nbrs=None
+    # tot_crill_nbrs=None
+    # tot_fish_nbrs=None
+    # tot_shark_nbrs=None
+    # nbr_of_seeds=4
+    # iterations=10
 
-    # lock=threading.Lock()
-    # Creating the thread pool
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-        # Submitting tasks to the thread pool
-        futures = [executor.submit(get_numbers, i, iterations) for i in range(nbr_of_seeds)]
-        for future in concurrent.futures.as_completed(futures):
-            # lock.acquire()
-            algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=future.result()
-            tot_algae_nbrs=algae_nbrs if tot_algae_nbrs is None else [tot_algae_nbr+algae_nbr for tot_algae_nbr, algae_nbr in zip(tot_algae_nbrs, algae_nbrs)]
-            tot_crill_nbrs=crill_nbrs if tot_crill_nbrs is None else [tot_crill_nbr+crill_nbr for tot_crill_nbr, crill_nbr in zip(tot_crill_nbrs, crill_nbrs)]
-            tot_fish_nbrs=fish_nbrs if tot_fish_nbrs is None else [tot_fish_nbr+fish_nbr for tot_fish_nbr, fish_nbr in zip(tot_fish_nbrs, fish_nbrs)]
-            tot_shark_nbrs=shark_nbrs if tot_shark_nbrs is None else [tot_shark_nbr+shark_nbr for tot_shark_nbr, shark_nbr in zip(tot_shark_nbrs, shark_nbrs)]
-            # lock.release()
+    # # lock=threading.Lock()
+    # # Creating the thread pool
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
+    #     # Submitting tasks to the thread pool
+    #     futures = [executor.submit(get_numbers, i, iterations) for i in range(nbr_of_seeds)]
+    #     for future in concurrent.futures.as_completed(futures):
+    #         # lock.acquire()
+    #         algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=future.result()
+    #         tot_algae_nbrs=algae_nbrs if tot_algae_nbrs is None else [tot_algae_nbr+algae_nbr for tot_algae_nbr, algae_nbr in zip(tot_algae_nbrs, algae_nbrs)]
+    #         tot_crill_nbrs=crill_nbrs if tot_crill_nbrs is None else [tot_crill_nbr+crill_nbr for tot_crill_nbr, crill_nbr in zip(tot_crill_nbrs, crill_nbrs)]
+    #         tot_fish_nbrs=fish_nbrs if tot_fish_nbrs is None else [tot_fish_nbr+fish_nbr for tot_fish_nbr, fish_nbr in zip(tot_fish_nbrs, fish_nbrs)]
+    #         tot_shark_nbrs=shark_nbrs if tot_shark_nbrs is None else [tot_shark_nbr+shark_nbr for tot_shark_nbr, shark_nbr in zip(tot_shark_nbrs, shark_nbrs)]
+    #         # lock.release()
 
-    mean_algae_nbrs=[tot_algae_nbr/nbr_of_seeds for tot_algae_nbr in tot_algae_nbrs]
-    mean_crill_nbrs=[tot_crill_nbr/nbr_of_seeds for tot_crill_nbr in tot_crill_nbrs]
-    mean_fish_nbrs=[tot_fish_nbr/nbr_of_seeds for tot_fish_nbr in tot_fish_nbrs]
-    mean_shark_nbrs=[tot_shark_nbr/nbr_of_seeds for tot_shark_nbr in tot_shark_nbrs]
+    # mean_algae_nbrs=[tot_algae_nbr/nbr_of_seeds for tot_algae_nbr in tot_algae_nbrs]
+    # mean_crill_nbrs=[tot_crill_nbr/nbr_of_seeds for tot_crill_nbr in tot_crill_nbrs]
+    # mean_fish_nbrs=[tot_fish_nbr/nbr_of_seeds for tot_fish_nbr in tot_fish_nbrs]
+    # mean_shark_nbrs=[tot_shark_nbr/nbr_of_seeds for tot_shark_nbr in tot_shark_nbrs]
 
-    plt.figure()
-    plt.plot(mean_algae_nbrs, 'g', label='Algae')
-    plt.plot(mean_crill_nbrs, 'b', label='Crill')
-    plt.plot(mean_fish_nbrs, 'r', label='Fish')
-    plt.plot(mean_shark_nbrs, 'k', label='Shark')
-    plt.xlabel('iterations')
-    plt.ylabel('number of species (mean over different seeds)')
-    plt.legend()
-    plt.show()
+    # plt.figure()
+    # plt.plot(mean_algae_nbrs, 'g', label='Algae')
+    # plt.plot(mean_crill_nbrs, 'b', label='Crill')
+    # plt.plot(mean_fish_nbrs, 'r', label='Fish')
+    # plt.plot(mean_shark_nbrs, 'k', label='Shark')
+    # plt.xlabel('iterations')
+    # plt.ylabel('number of species (mean over different seeds)')
+    # plt.legend()
+    # plt.show()
