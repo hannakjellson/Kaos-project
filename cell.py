@@ -46,6 +46,13 @@ class Shark(Cell):
     def __init__(self, age=None, meals=None, had_meal=None, max_age=50, lay_egg=False, meals_for_birth=1, separate_gender=False):
         """
         Initialize Shark cell
+        age: int, age of shark
+        meals: int, number of meals eaten
+        had_meal: boolean, if the shark had a meal in the last round
+        max_age: int, the age the shark dies
+        lay_egg: boolean, if the shark lays egg
+        meals_for_birth: int, how many meals the shark should eat to give birth
+        separate_gender: boolean, if there are both male and female sharks.
         """
         self.max_age=max_age
         self.lay_egg=lay_egg
@@ -68,7 +75,7 @@ class Shark(Cell):
         """
         if self.age==self.max_age:
             # Shark dies
-            moved_local_species.set_specie(moved_local_species.get_center(),Empty_Cell())
+            moved_local_species.set_specie((1,1),Empty_Cell())
         else:
             # Saving the number of meals and if it had a meal in the previous round for later
             pre_meals=self.meals
@@ -80,26 +87,27 @@ class Shark(Cell):
             stuck_fish_indices=moved_local_species.where_fish()
             fish_indices=np.argwhere(np.logical_and(present_fish_indices, np.logical_or(still_empty_indices, stuck_fish_indices)))
             fish_indices=[tuple(fish_index) for fish_index in fish_indices]
-
             self.had_meal=False
+
+            # Try to eat
             if len(fish_indices)>0:
-                # Problem here: it does not eat everytime we get here.
                 move_to=random.choice(fish_indices)
                 moved_local_species.set_specie(move_to, self)
                 if self.priority<local_species[move_to].get_priority() or move_to in np.argwhere(np.logical_and(present_fish_indices, stuck_fish_indices)):
                     self.had_meal=True
                     self.meals+=1
             else:
-                move_to=local_species.get_random_common_none_index(moved_local_species, 1)
-                # If we have somewhere to move
+                move_to=local_species.get_random_common_none_index(moved_local_species)
+            
+            # If we have somewhere to move
             if move_to is not None:
                 # If possible, give birth to a new shark. If we are stuck, we simply do not give birth.
                 if (not self.lay_egg) and self.is_woman and pre_had_meal==True and pre_meals!=0 and pre_meals % self.meals_for_birth == 0:
-                    moved_local_species.set_specie(moved_local_species.get_center(), Shark(0,0,False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
+                    moved_local_species.set_specie((1,1), Shark(0,0,False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
                 moved_local_species.set_specie(move_to,self)
             # If we are stuck. 
             else: 
-                moved_local_species.set_specie(moved_local_species.get_center(), self)
+                moved_local_species.set_specie((1,1), self)
         self.age+=1
         return moved_local_species
     
@@ -107,7 +115,13 @@ class Fish(Cell):
     def __init__(self, age=None, meals=None, had_meal=None, max_age=50, lay_egg=False, meals_for_birth=1, separate_gender=False):
         """
         Initialize Fish cell
-        has_moved: boolean. False if there is a Fish in the Cell, True if the Fish left in this iteration
+        age: int, age of fish
+        meals: int, number of meals eaten
+        had_meal: boolean, if the fish had a meal in the last round
+        max_age: int, the age the fish dies
+        lay_egg: boolean, if the fish lays egg
+        meals_for_birth: int, how many meals the fish should eat to give birth
+        separate_gender: boolean, if there are both male and female fish.
         """
         self.max_age=max_age
         self.lay_egg=lay_egg
@@ -129,7 +143,7 @@ class Fish(Cell):
         moved_local_species: Grid describing how surrounding Cells have already moved in this iteration
         """
         # If we have not been eaten by a shark already
-        if isinstance(moved_local_species[moved_local_species.get_center()], Empty_Cell) and not self.age==self.max_age:
+        if isinstance(moved_local_species[(1,1)], Empty_Cell) and not self.age==self.max_age:
             # Saving the number of meals and if it had a meal in the previous round for later
             pre_meals=self.meals
             pre_had_meal=self.had_meal
@@ -141,27 +155,39 @@ class Fish(Cell):
             crill_indices=np.argwhere(np.logical_and(present_crill_indices, np.logical_or(still_empty_indices, stuck_crill_indices)))
             crill_indices=[tuple(crill_index) for crill_index in crill_indices]
             self.had_meal=False
+
+            # Try to eat
             if len(crill_indices)>0:
                 move_to=random.choice(crill_indices)
                 if self.priority<local_species[move_to].get_priority() or move_to in np.argwhere(np.logical_and(present_crill_indices, stuck_crill_indices)):
                     self.had_meal=True
                     self.meals+=1
             else:
-                move_to=local_species.get_random_common_none_index(moved_local_species, 1)
+                move_to=local_species.get_random_common_none_index(moved_local_species)
 
             # If we have somewhere to move
             if move_to is not None:
                 if (not self.lay_egg) and self.is_woman and pre_had_meal and pre_meals!=0 and pre_meals % self.meals_for_birth == 0:
-                    moved_local_species.set_specie(moved_local_species.get_center(), Fish(0, 0, False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
+                    moved_local_species.set_specie((1,1), Fish(0, 0, False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
                 moved_local_species.set_specie(move_to, self)         
             # If we are stuck
             else: 
-                moved_local_species.set_specie(moved_local_species.get_center(), self)
+                moved_local_species.set_specie((1,1), self)
         self.age+=1
         return moved_local_species
 
 class Crill(Cell):
     def __init__(self, age=None, meals=None, had_meal=None, max_age=50, lay_egg=False, meals_for_birth=1, separate_gender=False):
+        """
+        Initialize Crill cell
+        age: int, age of crill
+        meals: int, number of meals eaten
+        had_meal: boolean, if the crill had a meal in the last round
+        max_age: int, the age the crill dies
+        lay_egg: boolean, if the crill lays egg
+        meals_for_birth: int, how many meals the shark should eat to give birth
+        separate_gender: boolean, if there are both male and female crill.
+        """
         self.max_age=max_age
         self.lay_egg=lay_egg
         self.age=random.randint(0,self.max_age) if age is None else age
@@ -181,8 +207,8 @@ class Crill(Cell):
         local_species: Grid of this Crill and its surrounding Cells
         moved_local_species: Grid describing how surrounding Cells have already moved in this iteration
         """
-        # If we have been eaten by a fish already
-        if isinstance(moved_local_species[moved_local_species.get_center()], Empty_Cell) and not self.age==self.max_age:
+        # If we have not been eaten by a fish already
+        if isinstance(moved_local_species[(1,1)], Empty_Cell) and not self.age==self.max_age:
             # Saving the number of meals and if it had a meal in the previous round for later
             pre_meals=self.meals
             pre_had_meal=self.had_meal
@@ -191,23 +217,25 @@ class Crill(Cell):
             is_algae_matrix=moved_local_species.where_algae()
             algae_indices=np.argwhere(is_algae_matrix)
             algae_indices=[tuple(algae_index) for algae_index in algae_indices]
+
+            # Try to eat
             if len(algae_indices)>0:
                 move_to=random.choice(algae_indices)
                 self.had_meal=True
                 self.meals+=1
             else:
                 self.had_meal=False
-                move_to=local_species.get_random_common_none_index(moved_local_species, 1)
+                move_to=local_species.get_random_common_none_index(moved_local_species)
 
             # If we have somewhere to move
             if move_to is not None:
                 if (not self.lay_egg) and self.is_woman and pre_had_meal and pre_meals % self.meals_for_birth == 0:
-                    moved_local_species.set_specie(moved_local_species.get_center(), Crill(0,0,False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
+                    moved_local_species.set_specie((1,1), Crill(0,0,False, max_age=self.max_age, lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth, separate_gender=self.separate_gender))
                 moved_local_species.set_specie(move_to, self)
                  
             # If we are stuck
             else: 
-                moved_local_species.set_specie(moved_local_species.get_center(), self)
+                moved_local_species.set_specie((1,1), self)
         self.age+=1    
         return moved_local_species
 
@@ -219,5 +247,5 @@ class Algae(Cell):
         super().__init__((0, 255, 0))
 
     def update(self, local_species, moved_local_species):
-        moved_local_species.set_specie(moved_local_species.get_center(), Algae())
+        moved_local_species.set_specie((1,1), Algae())
         return moved_local_species

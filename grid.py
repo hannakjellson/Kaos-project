@@ -6,17 +6,23 @@ from pyqtgraph import QtGui, QtCore, QtWidgets
 import matplotlib.pyplot as plt
 # QtWidgets.QWidget
 # TODO: They can lay eggs instead. Try to make the births match what is in lotka volterra, remember that we have andelar in Lotka. Perhaps reset the algae thing. Note that the initial conditions in Lotka are very small. How to handle in this model?
-class Grid(QtWidgets.QWidget):
+class Grid():
     def __init__(self, array, allow_escape=False, algae_probability=0.01, meal_to_children=[1,1,1], max_ages=[50,50,50], lay_egg=False, meals_for_birth=[1, 1, 1], separate_gender=False):
         """
         Initialize the grid
-        size: int
         array: numpy.ndarray with Cell elements
+        allow_escape: boolean describing whether Fish and Crill are allowed to escape
+        algae_probability: float with the fraction of new algae in every new iteration
+        meal_to_children: list. If lay_egg, describes the fraction of children to meals at every iteration
+        max_ages: list with the ages at which the species die
+        lay_egg: boolean describing whether the species lay egg or give birth were they are
+        meals_for_birth: list. If not lay_egg, describes how many meals each specie need to give birth
+        separate_gender: boolean describing whether to separate men and women. Only women can give birth or lay egg
         """
-        super().__init__() 
-        self.day=QtCore.QTimer()
-        self.day.timeout.connect(self.update)
-        self.day.start(100)
+        # super().__init__() 
+        # self.day=QtCore.QTimer()
+        # self.day.timeout.connect(self.update)
+        # self.day.start(100)
         self.size=np.shape(array)
         self.array=array
         self.algae_nbrs=[]
@@ -28,7 +34,6 @@ class Grid(QtWidgets.QWidget):
         self.meal_to_children=meal_to_children
         self.max_ages=max_ages
         self.lay_egg=lay_egg
-        self.meal_to_children=meal_to_children
         self.meals_for_birth=meals_for_birth
         self.separate_gender=separate_gender
 
@@ -44,14 +49,7 @@ class Grid(QtWidgets.QWidget):
         """
         Return the grid as a numpy.ndarray 
         """
-        return self.array
-    
-    def get_center(self):
-        """
-        Return the index of the center cell, in case of using other grids than squares.
-        """
-        # TODO generalize for other shapes. This works now as it is only called for 3x3 grids.
-        return (1,1)      
+        return self.array    
     
     def get_local_species(self, cell_id):
         """
@@ -140,15 +138,21 @@ class Grid(QtWidgets.QWidget):
         return common_none_indices
 
 
-    def get_random_common_none_index(self, other_grid, size):
-        # Randomly pick an index from the common None indices
+    def get_random_common_none_index(self, other_grid):
+        """
+        Returns indices where both self and other grids have Empty_Cells, ordered randomly
+        other_grid: Grid with the same size as self.
+        """
         common_none_indices=self.get_common_none_indices(other_grid)
         if common_none_indices:
-            return random.choice(common_none_indices) if size==1 else random.sample(common_none_indices, size)
+            return random.choice(common_none_indices)
         else:
-            return None  # Return None if no common None indices are found
+            return None 
         
     def get_species(self):
+        """
+        Returns the species
+        """
         algaes=self.array[self.where_algae()]
         crills=self.array[self.where_crill()]
         fish=self.array[self.where_fish()]
@@ -156,6 +160,9 @@ class Grid(QtWidgets.QWidget):
         return len(algaes), len(crills), len(fish), len(sharks)
     
     def get_numbers(self):
+        """
+        Returns the number of species
+        """
         return (self.algae_nbrs, self.crill_nbrs, self.fish_nbrs, self.shark_nbrs)
     
     def update(self):
@@ -170,20 +177,20 @@ class Grid(QtWidgets.QWidget):
         self.fish_nbrs.append(fish_nbr)
         self.shark_nbrs.append(shark_nbr)
 
-        # Split up indices in different species
+        # Choose indices where there are species
         algae_indices=self.get_algae_indices()
         shark_indices=self.get_shark_indices()
         fish_indices=self.get_fish_indices()
         crill_indices=self.get_crill_indices()
 
+        # Randomize order in which they are updated s.t. fish and crill can escape. Algae can not escape.
         other_species_indices=shark_indices+fish_indices+crill_indices
         if self.allow_escape:
-            # Randomize order in which they are updates s.t. fish and crill can escape. Algae can not escape.
             np.random.shuffle(other_species_indices) 
 
         not_none_indices=algae_indices+other_species_indices
 
-        # Creating arrays. 
+        # Creating arrays
         empty_array=np.empty(self.size, dtype=object)
         empty_array[empty_array==None]=Empty_Cell() 
         moved_species_grid=Grid(empty_array)
@@ -208,7 +215,7 @@ class Grid(QtWidgets.QWidget):
             updated_moved_local_species=self.array[i][j].update(local_species, moved_local_species)
             moved_species_grid.set_local_species(index, updated_moved_local_species)
 
-            # Updating the number of kids
+            # Updating the number of meals if we are supposed to lay eggs
             current_specie=self.array[index]
             if (not isinstance(current_specie, Algae)) and current_specie.had_meal and current_specie.lay_egg:
                 if isinstance(current_specie, Shark):
@@ -218,29 +225,32 @@ class Grid(QtWidgets.QWidget):
                 elif isinstance(current_specie, Crill):
                     num_crill_meals+=1
 
-        # Add new species and algae at random. Would like to get rid of this.
+        # Determine number of new individuals 
         algae_nbr, _, _, _=self.get_species()
         num_new_algae=int(np.ceil(algae_nbr*self.algae_probability))
         num_new_shark=int(num_shark_meals*self.meal_to_children[0])
         num_new_fish=int(num_fish_meals*self.meal_to_children[1])
         num_new_crill=int(num_crill_meals*self.meal_to_children[2])
 
-        # If only half of them are women, we only lay half as many eggs
+        # If only half of them are women, we only lay half as many eggs. Not optimal.
         if self.separate_gender:
-            num_new_algae=int(num_new_algae/2)
             num_new_shark=int(num_new_shark/2)
             num_new_fish=int(num_new_fish/2)
             num_new_crill=int(num_new_crill/2)
 
+        # Create new species
         new_sharks=[Shark(0,0,False, max_age=self.max_ages[0], lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth[0], separate_gender=self.separate_gender) for i in range(num_new_shark)]
         new_fish=[Fish(0,0,False, max_age=self.max_ages[1], lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth[1], separate_gender=self.separate_gender) for i in range(num_new_fish)]
         new_crill=[Crill(0,0,False, max_age=self.max_ages[2], lay_egg=self.lay_egg, meals_for_birth=self.meals_for_birth[2], separate_gender=self.separate_gender) for i in range(num_new_crill)]
         new_algae=[Algae() for i in range(num_new_algae)]
+
+        # Prioritize laying egg over putting out algae
         new_species=new_sharks+new_fish+new_crill
         random.shuffle(new_species)
         new_species=new_species+new_algae
 
-        none_indices=self.get_common_none_indices(moved_species_grid) # Could also do this with common none indices, depends on if we allow things to pop up where something just left.
+        # Put out new individuals
+        none_indices=self.get_common_none_indices(moved_species_grid)
         nbr_of_places=len(none_indices) if len(none_indices)<len(new_species) else len(new_species)
         new_kid_indices=random.sample(none_indices, nbr_of_places)
         for i, index in enumerate(new_kid_indices):
@@ -250,30 +260,30 @@ class Grid(QtWidgets.QWidget):
         self.array=moved_species_grid.get_matrix()
 
         # Repainting
-        self.repaint()
+        # self.repaint()
 
-    def paintEvent(self, e):
-        painter = QtGui.QPainter(self)
-        brush = QtGui.QBrush()
-        brush.setColor(QtGui.QColor('black'))
-        brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
-        rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
-        painter.fillRect(rect, brush)
-        painter.setPen(QtGui.QPen(QtGui.QColor(150, 150, 150), 1))
-        cells = [[QtGui.QPainterPath() for j in range(self.size[1])] for i in
-                 range(self.size[0])]  # Path är lätt att göra customizable
-        dx = self.width() / len(cells)
-        dy = self.height() / len(cells[0])
-        for i in range(len(cells)):
-            for j in range(len(cells[0])):
-                x0 = i * dx
-                y0 = j * dy
-                cells[i][j].moveTo(x0, y0)
-                cells[i][j].lineTo(x0, y0 + dy)
-                cells[i][j].lineTo(x0 + dx, y0 + dy)
-                cells[i][j].lineTo(x0 + dx, y0)
-                cells[i][j].lineTo(x0, y0)
-                color=self.array[i][j].getColor()
-                brush.setColor(QtGui.QColor(color[0], color[1], color[2]))
-                painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
-                painter.drawPath(cells[i][j])
+    # def paintEvent(self, e):
+    #     painter = QtGui.QPainter(self)
+    #     brush = QtGui.QBrush()
+    #     brush.setColor(QtGui.QColor('black'))
+    #     brush.setStyle(QtCore.Qt.BrushStyle.SolidPattern)
+    #     rect = QtCore.QRect(0, 0, painter.device().width(), painter.device().height())
+    #     painter.fillRect(rect, brush)
+    #     painter.setPen(QtGui.QPen(QtGui.QColor(150, 150, 150), 1))
+    #     cells = [[QtGui.QPainterPath() for j in range(self.size[1])] for i in
+    #              range(self.size[0])]  # Path är lätt att göra customizable
+    #     dx = self.width() / len(cells)
+    #     dy = self.height() / len(cells[0])
+    #     for i in range(len(cells)):
+    #         for j in range(len(cells[0])):
+    #             x0 = i * dx
+    #             y0 = j * dy
+    #             cells[i][j].moveTo(x0, y0)
+    #             cells[i][j].lineTo(x0, y0 + dy)
+    #             cells[i][j].lineTo(x0 + dx, y0 + dy)
+    #             cells[i][j].lineTo(x0 + dx, y0)
+    #             cells[i][j].lineTo(x0, y0)
+    #             color=self.array[i][j].getColor()
+    #             brush.setColor(QtGui.QColor(color[0], color[1], color[2]))
+    #             painter.setBrush(brush)  # Sätter till en kopia av brush, har inte pointern till brush
+    #             painter.drawPath(cells[i][j])
