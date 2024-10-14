@@ -116,9 +116,9 @@ if __name__ == '__main__':
     # # Create grid that oscillates with three species
     # pre_grid=create_oscillation_with_three_grid(seed=3)
 
-    # # Create grid that oscillates with four species
-    # probabilities=[0.20, 0.20, 0.20, 0.20, 0.20]
-    # pre_grid=create_oscillation_with_four_grid(probabilities, seed=2)
+    # Create grid that oscillates with four species
+    probabilities=[0.20, 0.19, 0.41, 0.20, 0]
+    pre_grid=create_oscillation_with_four_grid(probabilities, seed=2)
 
     # If we want to plot the grid. This requires grid to inherit from QWidgets.QWidget, 
     # and for all code in grid.py that is commented out to be uncommented.
@@ -129,7 +129,7 @@ if __name__ == '__main__':
     # pg.exec()
 
     # # If we just want to see the number of species as a function of time.
-    # run_update(pre_grid, iter=100, plot_number_of_species=True)
+    run_update(pre_grid, iter=1000, plot_number_of_species=True)
 
     # # Create two grids to calculate Lyapunov Exponents
     # probabilities_1=[0.20, 0.20, 0.20, 0.20, 0.20]
@@ -216,18 +216,18 @@ if __name__ == '__main__':
         for i in range(len(all_shark_nbrs)):
             writer.writerow(all_shark_nbrs[i])
 
-    # data_orig = np.genfromtxt('seed_50_iter_1000_init_20_19_41_20_0.csv', delimiter=',', skip_header=1)
-    # # data_change = np.genfromtxt('seed_50_iter_100_init_21_20_20_19_20.csv', delimiter=',', skip_header=1)
-    # # Split the data into separate arrays (columns)
-    # mean_algae_nbrs1 = data_orig[:, 0]
-    # mean_crill_nbrs1 = data_orig[:, 1]
-    # mean_fish_nbrs1 = data_orig[:, 2]
-    # mean_shark_nbrs1 = data_orig[:, 3]
+    data_orig = np.genfromtxt('seed_50_iter_1000_init_20_20_40_20_0.csv', delimiter=',', skip_header=1)
+    data_change = np.genfromtxt('seed_50_iter_1000_init_20_19_41_20.csv', delimiter=',', skip_header=1)
+    # Split the data into separate arrays (columns)
+    mean_algae_nbrs1 = data_orig[:, 0]
+    mean_crill_nbrs1 = data_orig[:, 1]
+    mean_fish_nbrs1 = data_orig[:, 2]
+    mean_shark_nbrs1 = data_orig[:, 3]
 
-    # # mean_algae_nbrs2 = data_change[:, 0]
-    # # mean_crill_nbrs2 = data_change[:, 1]
-    # # mean_fish_nbrs2 = data_change[:, 2]
-    # # mean_shark_nbrs2 = data_change[:, 3]
+    mean_algae_nbrs2 = data_change[:, 0]
+    mean_crill_nbrs2 = data_change[:, 1]
+    mean_fish_nbrs2 = data_change[:, 2]
+    mean_shark_nbrs2 = data_change[:, 3]
 
     # mean_algae_nbrs=[tot_algae_nbr/nbr_of_seeds for tot_algae_nbr in tot_algae_nbrs]
     # mean_crill_nbrs=[tot_crill_nbr/nbr_of_seeds for tot_crill_nbr in tot_crill_nbrs]
@@ -243,12 +243,12 @@ if __name__ == '__main__':
     # plt.ylabel('number of species (mean over different seeds)')
     # plt.legend()
 
-    # # plt.figure()
-    # # plt.plot(mean_algae_nbrs2, 'g', label='Algae')
-    # # plt.plot(mean_crill_nbrs2, 'b', label='Crill')
-    # # plt.plot(mean_fish_nbrs2, 'r', label='Fish')
-    # # plt.plot(mean_shark_nbrs2, 'k', label='Shark')
-    # # plt.xlabel('iterations')
-    # # plt.ylabel('number of species (mean over different seeds)')
-    # # plt.legend()
-    # plt.show()
+    plt.figure()
+    plt.plot(mean_algae_nbrs2, 'g', label='Algae')
+    plt.plot(mean_crill_nbrs2, 'b', label='Crill')
+    plt.plot(mean_fish_nbrs2, 'r', label='Fish')
+    plt.plot(mean_shark_nbrs2, 'k', label='Shark')
+    plt.xlabel('iterations')
+    plt.ylabel('number of species (mean over different seeds)')
+    plt.legend()
+    plt.show()
