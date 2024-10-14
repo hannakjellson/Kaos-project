@@ -185,13 +185,13 @@ if __name__ == '__main__':
     # plt.show()
 
     # Try to parallelize
-    tot_algae_nbrs=None
-    tot_crill_nbrs=None
-    tot_fish_nbrs=None
-    tot_shark_nbrs=None
+    all_algae_nbrs=[]
+    all_crill_nbrs=[]
+    all_fish_nbrs=[]
+    all_shark_nbrs=[]
     nbr_of_seeds=50
     iterations=1000
-    probabilities=[0.20, 0.19, 0.41, 0.20, 0]
+    probabilities=[0.20, 0.20, 0.40, 0.20, 0]
 
     # Creating the thread pool
     with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
@@ -199,22 +199,22 @@ if __name__ == '__main__':
         futures = [executor.submit(get_numbers, i, iterations, probabilities) for i in range(nbr_of_seeds)]
         for future in concurrent.futures.as_completed(futures):
             algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=future.result()
-            tot_algae_nbrs=algae_nbrs if tot_algae_nbrs is None else [tot_algae_nbr+algae_nbr for tot_algae_nbr, algae_nbr in zip(tot_algae_nbrs, algae_nbrs)]
-            tot_crill_nbrs=crill_nbrs if tot_crill_nbrs is None else [tot_crill_nbr+crill_nbr for tot_crill_nbr, crill_nbr in zip(tot_crill_nbrs, crill_nbrs)]
-            tot_fish_nbrs=fish_nbrs if tot_fish_nbrs is None else [tot_fish_nbr+fish_nbr for tot_fish_nbr, fish_nbr in zip(tot_fish_nbrs, fish_nbrs)]
-            tot_shark_nbrs=shark_nbrs if tot_shark_nbrs is None else [tot_shark_nbr+shark_nbr for tot_shark_nbr, shark_nbr in zip(tot_shark_nbrs, shark_nbrs)]
+            all_algae_nbrs.append(algae_nbrs)
+            all_crill_nbrs.append(crill_nbrs)
+            all_fish_nbrs.append(fish_nbrs)
+            all_shark_nbrs.append(shark_nbrs)
 
-    mean_algae_nbrs=[tot_algae_nbr/nbr_of_seeds for tot_algae_nbr in tot_algae_nbrs]
-    mean_crill_nbrs=[tot_crill_nbr/nbr_of_seeds for tot_crill_nbr in tot_crill_nbrs]
-    mean_fish_nbrs=[tot_fish_nbr/nbr_of_seeds for tot_fish_nbr in tot_fish_nbrs]
-    mean_shark_nbrs=[tot_shark_nbr/nbr_of_seeds for tot_shark_nbr in tot_shark_nbrs]
-
-    with open('seed_50_iter_1000_init_20_19_41_20_0.csv', 'w', newline='') as file:
+    with open('all_values_seed_50_iter_1000_init_20_20_40_20_0.csv', 'w', newline='') as file:
         writer = csv.writer(file)
 
-        for i in range(len(mean_algae_nbrs)):
-            writer.writerow([mean_algae_nbrs[i], mean_crill_nbrs[i], mean_fish_nbrs[i], mean_shark_nbrs[i]])
-
+        for i in range(len(all_algae_nbrs)):
+            writer.writerow(all_algae_nbrs[i])
+        for i in range(len(all_crill_nbrs)):
+            writer.writerow(all_crill_nbrs[i])
+        for i in range(len(all_fish_nbrs)):
+            writer.writerow(all_fish_nbrs[i])
+        for i in range(len(all_shark_nbrs)):
+            writer.writerow(all_shark_nbrs[i])
 
     # data_orig = np.genfromtxt('seed_50_iter_1000_init_20_19_41_20_0.csv', delimiter=',', skip_header=1)
     # # data_change = np.genfromtxt('seed_50_iter_100_init_21_20_20_19_20.csv', delimiter=',', skip_header=1)
@@ -228,6 +228,11 @@ if __name__ == '__main__':
     # # mean_crill_nbrs2 = data_change[:, 1]
     # # mean_fish_nbrs2 = data_change[:, 2]
     # # mean_shark_nbrs2 = data_change[:, 3]
+
+    # mean_algae_nbrs=[tot_algae_nbr/nbr_of_seeds for tot_algae_nbr in tot_algae_nbrs]
+    # mean_crill_nbrs=[tot_crill_nbr/nbr_of_seeds for tot_crill_nbr in tot_crill_nbrs]
+    # mean_fish_nbrs=[tot_fish_nbr/nbr_of_seeds for tot_fish_nbr in tot_fish_nbrs]
+    # mean_shark_nbrs=[tot_shark_nbr/nbr_of_seeds for tot_shark_nbr in tot_shark_nbrs]
 
     # plt.figure()
     # plt.plot(mean_algae_nbrs1, 'g', label='Algae')
