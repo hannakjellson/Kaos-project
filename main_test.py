@@ -112,143 +112,141 @@ def get_numbers(i, iterations, probabilities):
     return algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs
 
 if __name__ == '__main__':  
+    # # Option 1: Create grid that oscillates with three species
     # app=pg.mkQApp("WATOR")
-    # # Create grid that oscillates with three species
     # pre_grid=create_oscillation_with_three_grid(seed=3)
 
-    # Create grid that oscillates with four species
-    probabilities=[0.20, 0.19, 0.41, 0.20, 0]
-    pre_grid=create_oscillation_with_four_grid(probabilities, seed=2)
-
-    # If we want to plot the grid. This requires grid to inherit from QWidgets.QWidget, 
-    # and for all code in grid.py that is commented out to be uncommented.
+    # # If we want to plot the grid. This requires grid to inherit from QWidgets.QWidget, 
+    # # and for all code in grid.py that is commented out to be uncommented. Also the app above needs to be uncommented.
     # window=QtWidgets.QMainWindow()
     # window.resize(1200,600)
     # window.setCentralWidget(pre_grid)
     # window.show()
     # pg.exec()
 
-    # # If we just want to see the number of species as a function of time.
-    run_update(pre_grid, iter=1000, plot_number_of_species=True)
+    # If we just want to see the number of species as a function of time.
+    # run_update(pre_grid, iter=100, plot_number_of_species=True)
 
-    # # Create two grids to calculate Lyapunov Exponents
-    # probabilities_1=[0.20, 0.20, 0.20, 0.20, 0.20]
-    # pre_grid_1=create_oscillation_with_four_grid(probabilities_1, seed=1)
-    # algae_nbrs_1, crill_nbrs_1, fish_nbrs_1, shark_nbrs_1=run_update(pre_grid_1, iter=100, plot_number_of_species=False, return_numbers=True)
-    
-    # probabilities_2=[0.20, 0.20, 0.20, 0.20, 0.20]
-    # pre_grid_2=create_oscillation_with_four_grid(probabilities_2, seed=2)
-    # algae_nbrs_2, crill_nbrs_2, fish_nbrs_2, shark_nbrs_2=run_update(pre_grid_2, iter=100, plot_number_of_species=False, return_numbers=True)
-
-    # algae_diff=[np.abs(algae_1-algae_2) for algae_1, algae_2 in zip(algae_nbrs_1, algae_nbrs_2)]
-    # crill_diff=[np.abs(crill_1-crill_2) for crill_1, crill_2 in zip(crill_nbrs_1, crill_nbrs_2)]
-    # fish_diff=[np.abs(fish_1-fish_2) for fish_1, fish_2 in zip(fish_nbrs_1, fish_nbrs_2)]
-    # shark_diff=[np.abs(shark_1-shark_2) for shark_1, shark_2 in zip(shark_nbrs_1, shark_nbrs_2)]
-
-    # plt.figure()
-    # plt.plot(algae_diff, 'g', label='Algae')
-    # plt.plot(crill_diff, 'b', label='Crill')
-    # plt.plot(fish_diff, 'r', label='Fish')
-    # plt.plot(shark_diff, 'k', label='Shark')
-    # plt.xlabel('iterations')
-    # plt.ylabel('difference in number of species (different seeds)')
-    # plt.legend()
-    # plt.show()
-
-    # tot_algae_nbrs=None
-    # tot_crill_nbrs=None
-    # tot_fish_nbrs=None
-    # tot_shark_nbrs=None
-    # nbr_of_seeds=20
-    # for i in range(nbr_of_seeds):
-    #     probabilities=[0.20, 0.20, 0.20, 0.20, 0.20]
-    #     pre_grid=create_oscillation_with_four_grid(probabilities, seed=i+1)
-    #     algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=run_update(pre_grid, iter=100, plot_number_of_species=False, return_numbers=True)
-    #     tot_algae_nbrs=algae_nbrs if tot_algae_nbrs is None else [tot_algae_nbr+algae_nbr for tot_algae_nbr, algae_nbr in zip(tot_algae_nbrs, algae_nbrs)]
-    #     tot_crill_nbrs=crill_nbrs if tot_crill_nbrs is None else [tot_crill_nbr+crill_nbr for tot_crill_nbr, crill_nbr in zip(tot_crill_nbrs, crill_nbrs)]
-    #     tot_fish_nbrs=fish_nbrs if tot_fish_nbrs is None else [tot_fish_nbr+fish_nbr for tot_fish_nbr, fish_nbr in zip(tot_fish_nbrs, fish_nbrs)]
-    #     tot_shark_nbrs=shark_nbrs if tot_shark_nbrs is None else [tot_shark_nbr+shark_nbr for tot_shark_nbr, shark_nbr in zip(tot_shark_nbrs, shark_nbrs)]
-
-    # mean_algae_nbrs=[tot_algae_nbr/nbr_of_seeds for tot_algae_nbr in tot_algae_nbrs]
-    # mean_crill_nbrs=[tot_crill_nbr/nbr_of_seeds for tot_crill_nbr in tot_crill_nbrs]
-    # mean_fish_nbrs=[tot_fish_nbr/nbr_of_seeds for tot_fish_nbr in tot_fish_nbrs]
-    # mean_shark_nbrs=[tot_shark_nbr/nbr_of_seeds for tot_shark_nbr in tot_shark_nbrs]
-
-    # plt.figure()
-    # plt.plot(mean_algae_nbrs, 'g', label='Algae')
-    # plt.plot(mean_crill_nbrs, 'b', label='Crill')
-    # plt.plot(mean_fish_nbrs, 'r', label='Fish')
-    # plt.plot(mean_shark_nbrs, 'k', label='Shark')
-    # plt.xlabel('iterations')
-    # plt.ylabel('number of species (mean over different seeds)')
-    # plt.legend()
-    # plt.show()
-
-    # Try to parallelize
-    all_algae_nbrs=[]
-    all_crill_nbrs=[]
-    all_fish_nbrs=[]
-    all_shark_nbrs=[]
-    nbr_of_seeds=50
-    iterations=1000
-    probabilities=[0.20, 0.20, 0.40, 0.20, 0]
-
-    # Creating the thread pool
-    with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
-        # Submitting tasks to the thread pool
-        futures = [executor.submit(get_numbers, i, iterations, probabilities) for i in range(nbr_of_seeds)]
-        for future in concurrent.futures.as_completed(futures):
-            algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=future.result()
-            all_algae_nbrs.append(algae_nbrs)
-            all_crill_nbrs.append(crill_nbrs)
-            all_fish_nbrs.append(fish_nbrs)
-            all_shark_nbrs.append(shark_nbrs)
-
-    with open('all_values_seed_50_iter_1000_init_20_20_40_20_0.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-
-        for i in range(len(all_algae_nbrs)):
-            writer.writerow(all_algae_nbrs[i])
-        for i in range(len(all_crill_nbrs)):
-            writer.writerow(all_crill_nbrs[i])
-        for i in range(len(all_fish_nbrs)):
-            writer.writerow(all_fish_nbrs[i])
-        for i in range(len(all_shark_nbrs)):
-            writer.writerow(all_shark_nbrs[i])
-
-    data_orig = np.genfromtxt('seed_50_iter_1000_init_20_20_40_20_0.csv', delimiter=',', skip_header=1)
-    data_change = np.genfromtxt('seed_50_iter_1000_init_20_19_41_20.csv', delimiter=',', skip_header=1)
+    # Option 2: Reading and plotting data for four species. Parameters defined in create_oscillation_with_four_grid
+    data_orig = np.genfromtxt('all_values_seed_50_iter_1000_init_20_20_40_20_0.csv', delimiter=',')
+    data_change = np.genfromtxt('all_values_seed_50_iter_1000_init_20_19_41_20_0.csv', delimiter=',')
     # Split the data into separate arrays (columns)
-    mean_algae_nbrs1 = data_orig[:, 0]
-    mean_crill_nbrs1 = data_orig[:, 1]
-    mean_fish_nbrs1 = data_orig[:, 2]
-    mean_shark_nbrs1 = data_orig[:, 3]
+    all_algae_nbrs1 = data_orig[:50, :]
+    all_crill_nbrs1 = data_orig[50:100, :]
+    all_fish_nbrs1 = data_orig[100:150, :]
+    all_shark_nbrs1 = data_orig[150:, :]
 
-    mean_algae_nbrs2 = data_change[:, 0]
-    mean_crill_nbrs2 = data_change[:, 1]
-    mean_fish_nbrs2 = data_change[:, 2]
-    mean_shark_nbrs2 = data_change[:, 3]
+    all_algae_nbrs2 = data_change[:50, :]
+    all_crill_nbrs2 = data_change[50:100, :]
+    all_fish_nbrs2 = data_change[100:150, :]
+    all_shark_nbrs2 = data_change[150:, :]
 
-    # mean_algae_nbrs=[tot_algae_nbr/nbr_of_seeds for tot_algae_nbr in tot_algae_nbrs]
-    # mean_crill_nbrs=[tot_crill_nbr/nbr_of_seeds for tot_crill_nbr in tot_crill_nbrs]
-    # mean_fish_nbrs=[tot_fish_nbr/nbr_of_seeds for tot_fish_nbr in tot_fish_nbrs]
-    # mean_shark_nbrs=[tot_shark_nbr/nbr_of_seeds for tot_shark_nbr in tot_shark_nbrs]
+    tot_algae_nbrs1=np.zeros((1000,2))
+    tot_crill_nbrs1=np.zeros((1000,2))
+    tot_fish_nbrs1=np.zeros((1000,2))
+    tot_shark_nbrs1=np.zeros((1000,2))
 
-    # plt.figure()
-    # plt.plot(mean_algae_nbrs1, 'g', label='Algae')
-    # plt.plot(mean_crill_nbrs1, 'b', label='Crill')
-    # plt.plot(mean_fish_nbrs1, 'r', label='Fish')
-    # plt.plot(mean_shark_nbrs1, 'k', label='Shark')
-    # plt.xlabel('iterations')
-    # plt.ylabel('number of species (mean over different seeds)')
-    # plt.legend()
+    tot_algae_nbrs2=np.zeros((1000,2))
+    tot_crill_nbrs2=np.zeros((1000,2))
+    tot_fish_nbrs2=np.zeros((1000,2))
+    tot_shark_nbrs2=np.zeros((1000,2))
 
+    # Choosing simulations to plot. Only the ones for which no specie ddies out.
+    for i in range(50):
+        add_full_sim1=True
+        add_full_sim2=True
+        for j in range(1000):
+            if not (all_algae_nbrs1[i,j]>0 and all_crill_nbrs1[i,j]>0 and all_fish_nbrs1[i,j]>0 and all_shark_nbrs1[i,j]>0):
+                add_full_sim1=False
+            if not (all_algae_nbrs2[i,j]>0 and all_crill_nbrs2[i,j]>0 and all_fish_nbrs2[i,j]>0 and all_shark_nbrs2[i,j]>0):
+                add_full_sim2=False
+        if add_full_sim1:
+            tot_algae_nbrs1[:,0]+=all_algae_nbrs1[i,:]
+            tot_algae_nbrs1[:,1]+=1
+            tot_crill_nbrs1[:,0]+=all_crill_nbrs1[i,:]
+            tot_crill_nbrs1[:,1]+=1
+            tot_fish_nbrs1[:,0]+=all_fish_nbrs1[i,:]
+            tot_fish_nbrs1[:,1]+=1
+            tot_shark_nbrs1[:,0]+=all_shark_nbrs1[i,:]
+            tot_shark_nbrs1[:,1]+=1
+        if add_full_sim2:
+            tot_algae_nbrs2[:,0]+=all_algae_nbrs2[i,:]
+            tot_algae_nbrs2[:,1]+=1
+            tot_crill_nbrs2[:,0]+=all_crill_nbrs2[i,:]
+            tot_crill_nbrs2[:,1]+=1
+            tot_fish_nbrs2[:,0]+=all_fish_nbrs2[i,:]
+            tot_fish_nbrs2[:,1]+=1
+            tot_shark_nbrs2[:,0]+=all_shark_nbrs2[i,:]
+            tot_shark_nbrs2[:,1]+=1
+
+    mean_algae_nbrs1=[tot_algae_nbr/nbr_of_non_zeros for tot_algae_nbr, nbr_of_non_zeros in zip(tot_algae_nbrs1[:,0], tot_algae_nbrs1[:,1])]
+    mean_crill_nbrs1=[tot_crill_nbr/nbr_of_non_zeros for tot_crill_nbr, nbr_of_non_zeros in zip(tot_crill_nbrs1[:,0], tot_crill_nbrs1[:,1])]
+    mean_fish_nbrs1=[tot_fish_nbr/nbr_of_non_zeros for tot_fish_nbr, nbr_of_non_zeros in zip(tot_fish_nbrs1[:,0], tot_fish_nbrs1[:,1])]
+    mean_shark_nbrs1=[tot_shark_nbr/nbr_of_non_zeros for tot_shark_nbr, nbr_of_non_zeros in zip(tot_shark_nbrs1[:,0], tot_shark_nbrs1[:,1])]
+
+    mean_algae_nbrs2=[tot_algae_nbr/nbr_of_non_zeros for tot_algae_nbr, nbr_of_non_zeros in zip(tot_algae_nbrs2[:,0], tot_algae_nbrs2[:,1])]
+    mean_crill_nbrs2=[tot_crill_nbr/nbr_of_non_zeros for tot_crill_nbr, nbr_of_non_zeros in zip(tot_crill_nbrs2[:,0], tot_crill_nbrs2[:,1])]
+    mean_fish_nbrs2=[tot_fish_nbr/nbr_of_non_zeros for tot_fish_nbr, nbr_of_non_zeros in zip(tot_fish_nbrs2[:,0], tot_fish_nbrs2[:,1])]
+    mean_shark_nbrs2=[tot_shark_nbr/nbr_of_non_zeros for tot_shark_nbr, nbr_of_non_zeros in zip(tot_shark_nbrs2[:,0], tot_shark_nbrs2[:,1])]
+
+    algae_diff=[np.abs(algae_1-algae_2) for algae_1, algae_2 in zip(mean_algae_nbrs1, mean_algae_nbrs2)]
+    crill_diff=[np.abs(crill_1-crill_2) for crill_1, crill_2 in zip(mean_crill_nbrs1, mean_crill_nbrs2)]
+    fish_diff=[np.abs(fish_1-fish_2) for fish_1, fish_2 in zip(mean_fish_nbrs1, mean_fish_nbrs2)]
+    shark_diff=[np.abs(shark_1-shark_2) for shark_1, shark_2 in zip(mean_shark_nbrs1, mean_shark_nbrs2)]
+    all_species_diff=[np.linalg.norm([algae_diff[i], crill_diff[i], fish_diff[i], shark_diff[i]], 2) for i in range(1000)]
+    
     plt.figure()
-    plt.plot(mean_algae_nbrs2, 'g', label='Algae')
-    plt.plot(mean_crill_nbrs2, 'b', label='Crill')
-    plt.plot(mean_fish_nbrs2, 'r', label='Fish')
-    plt.plot(mean_shark_nbrs2, 'k', label='Shark')
+    plt.plot(mean_crill_nbrs1[:200], 'b', label='Crill')
+    plt.plot(mean_fish_nbrs1[:200], 'r', label='Fish')
+    plt.plot(mean_shark_nbrs1[:200], 'k', label='Shark')
+    plt.plot(mean_algae_nbrs1[:200], 'g', label='Algae')
     plt.xlabel('iterations')
     plt.ylabel('number of species (mean over different seeds)')
     plt.legend()
+
+    plt.figure()
+    plt.plot(mean_crill_nbrs2[:200], 'b', label='Crill')
+    plt.plot(mean_fish_nbrs2[:200], 'r', label='Fish')
+    plt.plot(mean_shark_nbrs2[:200], 'k', label='Shark')
+    plt.plot(mean_algae_nbrs2[:200], 'g', label='Algae')
+    plt.xlabel('iterations')
+    plt.ylabel('number of species (mean over different seeds)')
+    plt.legend()
+
+    plt.figure()
+    plt.plot(all_species_diff)
+    plt.xlabel('iterations')
+    plt.ylabel('deltax(iterations)')
     plt.show()
+
+    # # Creating data for four species ALREADY SAVED IN FILES, DO NOT RUN.
+    # all_algae_nbrs=[]
+    # all_crill_nbrs=[]
+    # all_fish_nbrs=[]
+    # all_shark_nbrs=[]
+    # nbr_of_seeds=50
+    # iterations=1000
+    # probabilities=[0.20, 0.20, 0.40, 0.20, 0]
+
+    # # Creating the thread pool 
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=8) as executor:
+    #     # Submitting tasks to the thread pool
+    #     futures = [executor.submit(get_numbers, i, iterations, probabilities) for i in range(nbr_of_seeds)]
+    #     for future in concurrent.futures.as_completed(futures):
+    #         algae_nbrs, crill_nbrs, fish_nbrs, shark_nbrs=future.result()
+    #         all_algae_nbrs.append(algae_nbrs)
+    #         all_crill_nbrs.append(crill_nbrs)
+    #         all_fish_nbrs.append(fish_nbrs)
+    #         all_shark_nbrs.append(shark_nbrs)
+
+    # with open('all_values_seed_50_iter_1000_init_20_20_40_20_0.csv', 'w', newline='') as file:
+    #     writer = csv.writer(file)
+
+    #     for i in range(len(all_algae_nbrs)):
+    #         writer.writerow(all_algae_nbrs[i])
+    #     for i in range(len(all_crill_nbrs)):
+    #         writer.writerow(all_crill_nbrs[i])
+    #     for i in range(len(all_fish_nbrs)):
+    #         writer.writerow(all_fish_nbrs[i])
+    #     for i in range(len(all_shark_nbrs)):
+    #         writer.writerow(all_shark_nbrs[i])
