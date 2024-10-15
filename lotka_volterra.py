@@ -40,9 +40,9 @@ def plot_lotka_volterra():
 
     # Plotting the solution
     plt.plot(solution.t, solution.y[0], label='Algea Population', color='green')
-    plt.plot(solution.t, solution.y[1], label='Crill Population', color='orange')
-    plt.plot(solution.t, solution.y[2], label='Fish Population', color='yellow')
-    plt.plot(solution.t, solution.y[3], label='Shark Population', color='blue')
+    plt.plot(solution.t, solution.y[1], label='Crill Population', color='blue')
+    plt.plot(solution.t, solution.y[2], label='Fish Population', color='red')
+    plt.plot(solution.t, solution.y[3], label='Shark Population', color='black')
     plt.xlabel('Time')
     plt.ylabel('Population')
     plt.legend()
