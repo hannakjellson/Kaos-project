@@ -64,7 +64,7 @@ def calculate_manifold(x0, t_span, r, A):
 
     # Check if y_values is empty
     if y_values.size == 0:
-        print(f"No data to plot for iteration {i}.")
+        print(f"No data to plot.")
         return None, None
 
     return t_values, y_values
