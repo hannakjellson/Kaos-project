@@ -19,8 +19,119 @@ def dxdtAgar(t, x):
     dxdt_4 = 0.01*x[2]*x[3] - x[3]*x[3]
     return [dxdt_1, dxdt_2, dxdt_3, dxdt_4]
 
+# Projection function to enforce the constraint
+def enforce_constraint(x, constant):
+    current_total = np.sum(x)
+    # Calculate the difference
+    diff = current_total - constant
+
+    # Distribute the difference evenly among all species
+    adjustment = diff / len(x)  # Assuming len(x) is 4 (i.e., x[0], x[1], x[2], x[3])
+    
+    # Apply the adjustment
+    x += -adjustment  # Subtract the adjustment from each species
+    return x
+
+def calculate_manifold(x0, t_span, r, A):
+    constant = np.sum(x0)  # The sum of x[0] + x[1] + x[2] + x[3]
+    
+    # Initialize solve_ivp with dense_output=True
+    solver = solve_ivp(dxdt, t_span, x0, args=(r, A), dense_output=True, vectorized=False)
+
+    # Empty arrays to store the constrained solutions
+    t_values = []
+    y_values = []
+
+    # Time array for the dense output
+    t_eval = np.linspace(t_span[0], t_span[1], 500)
+
+    # Step through the solution manually
+    for t in t_eval:
+        # Get the current solution
+        solver.t = t
+        solver.y = solver.sol(t)
+
+        # Enforce the constraint on the current solution
+        constrained_y = enforce_constraint(solver.y, constant)
+
+        # Store the constrained solution
+        t_values.append(t)
+        y_values.append(constrained_y)
+
+    # Convert lists to arrays for plotting
+    t_values = np.array(t_values)
+    y_values = np.array(y_values).T  # Transpose for plotting
+
+    # Check if y_values is empty
+    if y_values.size == 0:
+        print(f"No data to plot for iteration {i}.")
+        return None, None
+
+    return t_values, y_values
+
 
 def plot_lotka_volterra():
+    #Manifold method
+    # Parameters
+    alpha = 0.1
+    beta = 0.1
+    r = np.array([0, 0, 0, 0])
+    A = np.array([[0.0, beta, 0, -alpha],
+                [-alpha, 0, beta, 0],
+                [0, -alpha, 0, beta],
+                [beta, 0, -alpha, 0]])
+
+    # Time span for integration
+    t_span = (0, 50)
+
+    x0 = np.array([613, 616, 639, 632])
+    t_values1, y_values1 = calculate_manifold(x0, t_span, r, A)
+
+    i = 1
+    # Adjust initial conditions slightly
+    x0 = np.array([613, 616 - i, 639 + i, 632])
+    t_values2, y_values2 = calculate_manifold(x0, t_span, r, A)
+
+    # Create subplots
+    fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+
+    # Plot individual populations for first run
+    axs[0].plot(t_values1, y_values1[0], label='Fire Population', color='red')
+    axs[0].plot(t_values1, y_values1[1], label='Earth Population', color='green')
+    axs[0].plot(t_values1, y_values1[2], label='Water Population', color='blue')
+    axs[0].plot(t_values1, y_values1[3], label='Wind Population', color='orange')
+
+    axs[0].set_ylabel('Population')
+    axs[0].legend()
+    axs[0].set_title(f'Populations of Species Original initial conditions')
+    axs[0].grid(True)
+
+    # Plot individual populations for second run
+    axs[1].plot(t_values2, y_values2[0], label='Fire Population', color='red')
+    axs[1].plot(t_values2, y_values2[1], label='Earth Population', color='green')
+    axs[1].plot(t_values2, y_values2[2], label='Water Population', color='blue')
+    axs[1].plot(t_values2, y_values2[3], label='Wind Population', color='orange')
+
+    axs[1].set_ylabel('Population')
+    axs[1].legend()
+    axs[1].set_title(f'Populations of Species Slightly perturbed initial conditions')
+    axs[1].grid(True)
+
+
+    # Calculate and the sum of populations
+    total_population = np.sum(y_values1, axis=0)
+    max_tot = np.max(total_population)
+    min_tot = np.min(total_population)
+    print(f"total population original between: {max_tot} and {min_tot}")
+    total_population = np.sum(y_values2, axis=0)
+    max_tot = np.max(total_population)
+    min_tot = np.min(total_population)
+    print(f"total population perturbed between: {max_tot} and {min_tot}")
+
+    # Show the plots
+    plt.tight_layout()
+    plt.show()
+
     '''
     # Parameters
     r = np.array([0.5, -0.5, -0.5, -0.5])  # Growth rates for each species
@@ -183,117 +294,6 @@ def plot_lotka_volterra():
     plt.show()
     '''
 
-    #Manifold method
-    # Parameters
-    alpha = 0.1
-    beta = 0.1
-    r = np.array([0, 0, 0, 0])
-    A = np.array([[0.0, beta, 0, -alpha],
-                [-alpha, 0, beta, 0],
-                [0, -alpha, 0, beta],
-                [beta, 0, -alpha, 0]])
-
-
-    # Projection function to enforce the constraint
-    def enforce_constraint(x, constant):
-        current_total = np.sum(x)
-        # Calculate the difference
-        diff = current_total - constant
-
-        # Distribute the difference evenly among all species
-        adjustment = diff / len(x)  # Assuming len(x) is 4 (i.e., x[0], x[1], x[2], x[3])
-        
-        # Apply the adjustment
-        x += -adjustment  # Subtract the adjustment from each species
-        return x
-
-
-
-    # Time span for integration
-    t_span = (0, 500)
-    #t_eval = np.linspace(t_span[0], t_span[1], 5000)
-
-    for i in range(10):
-        # Adjust initial conditions slightly for each run
-        x0 = np.array([11, 2 + i * 0.01, 6 - i*0.01, 7])
-        constant = np.sum(x0)  # The sum of x[0] + x[1] + x[2] + x[3]
-        
-        # Initialize solve_ivp with dense_output=True
-        solver = solve_ivp(dxdt, t_span, x0, args=(r, A), dense_output=True, vectorized=False)
-
-        # Empty arrays to store the constrained solutions
-        t_values = []
-        y_values = []
-
-        # Time array for the dense output
-        t_eval = np.linspace(t_span[0], t_span[1], 5000)
-
-        # Step through the solution manually
-        for t in t_eval:
-            # Get the current solution
-            solver.t = t
-            solver.y = solver.sol(t)
-
-            # Enforce the constraint on the current solution
-            constrained_y = enforce_constraint(solver.y, constant)
-
-            # Store the constrained solution
-            t_values.append(t)
-            y_values.append(constrained_y)
-
-        # Convert lists to arrays for plotting
-        t_values = np.array(t_values)
-        y_values = np.array(y_values).T  # Transpose for plotting
-
-        # Check if y_values is empty
-        if y_values.size == 0:
-            print(f"No data to plot for iteration {i}.")
-            continue
-
-        # Create subplots
-        fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
-
-        # Plot individual populations
-        axs[0].plot(t_values, y_values[0], label='Fire Population', color='red')
-        axs[0].plot(t_values, y_values[1], label='Earth Population', color='green')
-        axs[0].plot(t_values, y_values[2], label='Water Population', color='blue')
-        axs[0].plot(t_values, y_values[3], label='Wind Population', color='orange')
-
-        axs[0].set_ylabel('Population')
-        axs[0].legend()
-        axs[0].set_title(f'Populations of Species (i={i})')
-        axs[0].grid(True)
-
-        # Calculate and plot the sum of populations
-        total_population = np.sum(y_values, axis=0)
-        axs[1].plot(t_values, total_population, label='Total Population', color='purple')
-
-        axs[1].set_xlabel('Time')
-        axs[1].set_ylabel('Total Population')
-        axs[1].legend()
-        axs[1].set_title('Total Population of All Species')
-        axs[1].grid(True)
-
-        # Show the plots
-        plt.tight_layout()
-        plt.show()
-
-        '''
-
-        # Plot the results
-        plt.plot(t_values, y_values[0], label='Fire Population', color='red')
-        plt.plot(t_values, y_values[1], label='Earth Population', color='green')
-        plt.plot(t_values, y_values[2], label='Water Population', color='blue')
-        plt.plot(t_values, y_values[3], label='Wind Population', color='orange')
-
-        plt.xlabel('Time')
-        plt.ylabel('Population')
-        plt.legend()
-        plt.title(f'Numerical Solution with Manifold Projection (i={i})')
-        plt.grid(True)
-        plt.show()
-
-        '''
 
 if __name__ == '__main__':
     plot_lotka_volterra()
