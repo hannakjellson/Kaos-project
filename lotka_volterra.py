@@ -43,7 +43,7 @@ def calculate_manifold(x0, t_span, r, A):
     y_values = []
 
     # Time array for the dense output
-    t_eval = np.linspace(t_span[0], t_span[1], 500)
+    t_eval = np.linspace(t_span[0], t_span[1], t_span[1]*10)
 
     # Step through the solution manually
     for t in t_eval:
@@ -75,31 +75,125 @@ def plot_lotka_volterra():
     # Parameters
     alpha = 0.1
     beta = 0.1
+    #alpha = 0.05
+    #beta = 0.05
     r = np.array([0, 0, 0, 0])
     A = np.array([[0.0, beta, 0, -alpha],
                 [-alpha, 0, beta, 0],
                 [0, -alpha, 0, beta],
                 [beta, 0, -alpha, 0]])
 
+    #Lyapunov estimation
+    d_values = []
+    T = 7
+    M = 8
     # Time span for integration
-    t_span = (0, 50)
+    t_span = (0, T)
+
+    x01 = np.array([613, 616, 639, 632])
+    i = 1
+    # Adjust initial conditions slightly
+    x02 = np.array([613, 616 - i, 639 + i, 632])
+    epsilon = np.linalg.norm(x01-x02)
+
+    for k in range(0,M):
+        t_values, x_values1 = calculate_manifold(x01, t_span, r, A)
+        _, x_values2 = calculate_manifold(x02, t_span, r, A)
+
+        #Calculating the difference
+        delta_x = x_values1 - x_values2
+        norm_diff = np.linalg.norm(delta_x, axis=0)
+        norm_delta_x_T = norm_diff[-1]
+        d_values.append(norm_delta_x_T)
+
+
+        #plotting for doublechecking
+        #plt.plot(t_values, norm_diff)
+        #plt.show()
+
+        # Create subplots
+        fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+
+        # Plot individual populations for first run
+        axs[0].plot(t_values, x_values1[0], label='Fire Population', color='red')
+        axs[0].plot(t_values, x_values1[1], label='Earth Population', color='green')
+        axs[0].plot(t_values, x_values1[2], label='Water Population', color='blue')
+        axs[0].plot(t_values, x_values1[3], label='Wind Population', color='orange')
+
+        axs[0].set_ylabel('Population')
+        axs[0].legend()
+        axs[0].set_title(f'Populations of Species Original initial conditions')
+        axs[0].grid(True)
+
+        # Plot individual populations for second run
+        axs[1].plot(t_values, x_values2[0], label='Fire Population', color='red')
+        axs[1].plot(t_values, x_values2[1], label='Earth Population', color='green')
+        axs[1].plot(t_values, x_values2[2], label='Water Population', color='blue')
+        axs[1].plot(t_values, x_values2[3], label='Wind Population', color='orange')
+
+        axs[1].set_ylabel('Population')
+        axs[1].legend()
+        axs[1].set_title(f'Populations of Species Slightly perturbed initial conditions')
+        axs[1].grid(True)
+
+        axs[2].plot(t_values, norm_diff)
+        axs[2].set_ylabel('Norm of the difference')
+        axs[2].set_xlabel('t')
+        axs[2].set_title(f'Norm of the difference between original and perturbed systems')
+        axs[2].grid(True)
+
+        plt.tight_layout()
+        plt.show()
+
+        #resetting deltax(T)
+        delta_x_T = delta_x[:,-1]
+        x1_T = x_values1[:,-1]
+        delta_x_T_prime = epsilon*delta_x_T/norm_delta_x_T
+        x01 = x1_T
+        x02 = x01 - delta_x_T_prime
+    
+    lambda_1 = (1/(M*T))*np.sum(np.log(d_values/epsilon))
+    print(lambda_1)
+
+    #print(x01)
+    #print(x02)
+    #print(x1_T)
+    #print(delta_x_T)
+    #print(delta_x_T_prime)
+
+    #plotting for doublechecking
+    #plt.plot(t_values, norm_diff)
+    #plt.show()
+
+    #For nice looking plotting purposes
+    '''
+    # Time span for integration
+    #t_span = (0, 50)
+    t_span = (0, 20)
+    #t_span = (0, 200)
+    #t_span = (0, 400)
 
     x0 = np.array([613, 616, 639, 632])
-    t_values1, y_values1 = calculate_manifold(x0, t_span, r, A)
+    t_values, y_values1 = calculate_manifold(x0, t_span, r, A)
 
     i = 1
     # Adjust initial conditions slightly
     x0 = np.array([613, 616 - i, 639 + i, 632])
-    t_values2, y_values2 = calculate_manifold(x0, t_span, r, A)
+    _, y_values2 = calculate_manifold(x0, t_span, r, A)
+
+    #Calculating the difference
+    difference = y_values1 - y_values2
+    norm_diff = np.linalg.norm(difference, axis=0)
+    #print(norm)
 
     # Create subplots
-    fig, axs = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    fig, axs = plt.subplots(3, 1, figsize=(20, 16), sharex=True)
 
     # Plot individual populations for first run
-    axs[0].plot(t_values1, y_values1[0], label='Fire Population', color='red')
-    axs[0].plot(t_values1, y_values1[1], label='Earth Population', color='green')
-    axs[0].plot(t_values1, y_values1[2], label='Water Population', color='blue')
-    axs[0].plot(t_values1, y_values1[3], label='Wind Population', color='orange')
+    axs[0].plot(t_values, y_values1[0], label='Fire Population', color='red')
+    axs[0].plot(t_values, y_values1[1], label='Earth Population', color='green')
+    axs[0].plot(t_values, y_values1[2], label='Water Population', color='blue')
+    axs[0].plot(t_values, y_values1[3], label='Wind Population', color='orange')
 
     axs[0].set_ylabel('Population')
     axs[0].legend()
@@ -107,30 +201,39 @@ def plot_lotka_volterra():
     axs[0].grid(True)
 
     # Plot individual populations for second run
-    axs[1].plot(t_values2, y_values2[0], label='Fire Population', color='red')
-    axs[1].plot(t_values2, y_values2[1], label='Earth Population', color='green')
-    axs[1].plot(t_values2, y_values2[2], label='Water Population', color='blue')
-    axs[1].plot(t_values2, y_values2[3], label='Wind Population', color='orange')
+    axs[1].plot(t_values, y_values2[0], label='Fire Population', color='red')
+    axs[1].plot(t_values, y_values2[1], label='Earth Population', color='green')
+    axs[1].plot(t_values, y_values2[2], label='Water Population', color='blue')
+    axs[1].plot(t_values, y_values2[3], label='Wind Population', color='orange')
 
     axs[1].set_ylabel('Population')
     axs[1].legend()
     axs[1].set_title(f'Populations of Species Slightly perturbed initial conditions')
     axs[1].grid(True)
 
+    axs[2].plot(t_values, norm_diff)
+    axs[2].set_ylabel('Norm of the difference')
+    axs[2].set_xlabel('t')
+    axs[2].set_title(f'Norm of the difference between original and perturbed systems')
+    axs[2].grid(True)
+
+
 
     # Calculate and the sum of populations
-    total_population = np.sum(y_values1, axis=0)
-    max_tot = np.max(total_population)
-    min_tot = np.min(total_population)
-    print(f"total population original between: {max_tot} and {min_tot}")
-    total_population = np.sum(y_values2, axis=0)
-    max_tot = np.max(total_population)
-    min_tot = np.min(total_population)
-    print(f"total population perturbed between: {max_tot} and {min_tot}")
+    #total_population = np.sum(y_values1, axis=0)
+    #max_tot = np.max(total_population)
+    #min_tot = np.min(total_population)
+    #print(f"total population original between: {max_tot} and {min_tot}")
+    #total_population = np.sum(y_values2, axis=0)
+    #max_tot = np.max(total_population)
+    #min_tot = np.min(total_population)
+    #print(f"total population perturbed between: {max_tot} and {min_tot}")
 
     # Show the plots
     plt.tight_layout()
     plt.show()
+    '''
+    # ========================================================================================
 
     '''
     # Parameters
