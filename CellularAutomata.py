@@ -8,7 +8,7 @@ from pyqtgraph import QtGui, QtCore, QtWidgets
 import Individuals
 
 timestep=60  # Time between iterations
-seed=39
+seed=72
 # seed=1 one sim stalemates after 1300, other after 3000
 # seed=2 one sim stalemates after 2300, other after 2500
 # seed=3 one sim stalemates after 2600, other after 7200
