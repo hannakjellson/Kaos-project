@@ -7,7 +7,7 @@ from pyqtgraph import QtGui, QtCore, QtWidgets
 
 import Individuals
 
-timestep=60  # Time between iterations
+timestep=100  # Time between iterations
 seed=72
 # seed=1 one sim stalemates after 1300, other after 3000
 # seed=2 one sim stalemates after 2300, other after 2500
@@ -20,7 +20,7 @@ seed=72
 # seed=35 stalemate around 8200
 # seed=56 both stalemate at almost exact same time but changes stalemate results
 # seed=72 spiral in initial population with one cell changed. Spiral forms after about 260 iterations, completely periodic after about 700
-maxhistory=20000
+maxhistory=2000
 
 def torusloop(pos, size):
     return np.mod(pos + size, size)  # Periodic geometry
@@ -60,7 +60,7 @@ class Environment(QtWidgets.QWidget):
                 self.requestedPopulation[x][y] = individual.behavior(neighbors)
         self.population = copy.deepcopy(self.requestedPopulation)
         self.measurePopulations()
-        if np.shape(self.speciesHistory)[1] % 50 == 0:
+        if np.shape(self.speciesHistory)[1] % 10 == 0:
             self.repaint()
 
     def measurePopulations(self):
@@ -104,16 +104,16 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
 
         xsize = 50
         ysize = 50
-        initpop = [[TestPopulation.Individual for j in range(ysize)] for i in range(xsize)]
+        initpop = [[Individuals.Individual for j in range(ysize)] for i in range(xsize)]
         #  Start population
         np.random.seed(seed)
         """
         for i in range(self.xsize):
             for j in range(self.ysize):
                 if (i==4 and j==4) or (i==5 and j==4) or (i==5 and j==5) or (i==6 and j==5) or (i==4 and j==6):
-                    self.population[i][j] = TestPopulation.Alive(i,j)
+                    self.population[i][j] = Individuals.Alive(i,j)
                 else:
-                    self.population[i][j] = TestPopulation.Dead(i, j)
+                    self.population[i][j] = Individuals.Dead(i, j)
         """
 
 
@@ -123,13 +123,13 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
                 if i == xsize//2 and j == ysize//2: species = torusloop(species+skew, 4)
                 match species:
                     case 0:
-                        initpop[i][j] = TestPopulation.FireElemental(i, j)
+                        initpop[i][j] = Individuals.FireElemental(i, j)
                     case 1:
-                        initpop[i][j] = TestPopulation.AirElemental(i, j)
+                        initpop[i][j] = Individuals.AirElemental(i, j)
                     case 2:
-                        initpop[i][j] = TestPopulation.WaterElemental(i, j)
+                        initpop[i][j] = Individuals.WaterElemental(i, j)
                     case 3:
-                        initpop[i][j] = TestPopulation.EarthElemental(i, j)
+                        initpop[i][j] = Individuals.EarthElemental(i, j)
 
         """
         for i in range(xsize):
@@ -138,13 +138,13 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
                 if i == xsize//2 and j == ysize//2: species = torusloop(species+skew, 4)
                 match species:
                     case 0:
-                        initpop[i][j] = TestPopulation.Agar(i, j)
+                        initpop[i][j] = Individuals.Agar(i, j)
                     case 1:
-                        initpop[i][j] = TestPopulation.Bacteria(i, j)
+                        initpop[i][j] = Individuals.Bacteria(i, j)
                     case 2:
-                        initpop[i][j] = TestPopulation.Waste(i, j)
+                        initpop[i][j] = Individuals.Waste(i, j)
                     case 3:
-                        initpop[i][j] = TestPopulation.Amoeba(i, j)
+                        initpop[i][j] = Individuals.Amoeba(i, j)
         """
         self.environment = Environment(initpop)
         self.environment.setMinimumSize(300, 300)
@@ -162,12 +162,11 @@ class CellularAutomataSimulator(QtWidgets.QWidget):
         self.setLayout(main_layout)
 
     def updatePlot(self):
-        if np.shape(self.environment.speciesHistory)[1] % 50 == 0:
-            self.historyWidget.clear()
-            start=max(0, np.shape(self.environment.speciesHistory)[1]-maxhistory)
-            for i in range(np.shape(self.environment.speciesHistory)[0]):
-                self.historyWidget.plot(range(start, np.shape(self.environment.speciesHistory)[1]), self.environment.speciesHistory[i][start:],
-                                        pen=pg.mkPen(color=self.environment.speciesList[i].color, width=2))
+        self.historyWidget.clear()
+        start=max(0, np.shape(self.environment.speciesHistory)[1]-maxhistory)
+        for i in range(np.shape(self.environment.speciesHistory)[0]):
+            self.historyWidget.plot(range(start, np.shape(self.environment.speciesHistory)[1]), self.environment.speciesHistory[i][start:],
+                                    pen=pg.mkPen(color=self.environment.speciesList[i].color, width=2))
 
 class SimComparator(QtWidgets.QWidget):
     def __init__(self, sim1, sim2):
@@ -185,13 +184,12 @@ class SimComparator(QtWidgets.QWidget):
         self.setLayout(self.main_layout)
 
     def updatePlot(self):
+        self.historyWidget.clear()
         history1=np.array(self.sim1.environment.speciesHistory)
         history2=np.array(self.sim2.environment.speciesHistory)
         start = max(0, np.shape(history1)[1] - maxhistory)
         self.diffpop.append(np.linalg.norm(history1[:,-1]-history2[:,-1]))
-        if len(self.diffpop) % 50 == 0:
-            self.historyWidget.clear()
-            self.historyWidget.plot(range(start, np.shape(self.diffpop)[0]), self.diffpop[start:])
+        self.historyWidget.plot(range(start, np.shape(self.diffpop)[0]), self.diffpop[start:])
 
         if len(self.diffpop) % 20==0:
             maxdiffindex = np.argmax(self.diffpop)
