@@ -29,7 +29,7 @@ def enforce_constraint(x, constant):
     adjustment = diff / len(x)  # Assuming len(x) is 4 (i.e., x[0], x[1], x[2], x[3])
     
     # Apply the adjustment
-    x += -adjustment  # Subtract the adjustment from each species
+    #x += -adjustment  # Subtract the adjustment from each species
     return x
 
 def calculate_manifold(x0, t_span, r, A):
@@ -82,7 +82,7 @@ def plot_lotka_volterra():
                 [-alpha, 0, beta, 0],
                 [0, -alpha, 0, beta],
                 [beta, 0, -alpha, 0]])
-
+    
     #Lyapunov estimation
     d_values = []
     T = 7
@@ -164,7 +164,7 @@ def plot_lotka_volterra():
     #plotting for doublechecking
     #plt.plot(t_values, norm_diff)
     #plt.show()
-
+    
     #For nice looking plotting purposes
     '''
     # Time span for integration
@@ -172,6 +172,7 @@ def plot_lotka_volterra():
     t_span = (0, 20)
     #t_span = (0, 200)
     #t_span = (0, 400)
+    #t_span = (0, 1000)
 
     x0 = np.array([613, 616, 639, 632])
     t_values, y_values1 = calculate_manifold(x0, t_span, r, A)
@@ -187,7 +188,7 @@ def plot_lotka_volterra():
     #print(norm)
 
     # Create subplots
-    fig, axs = plt.subplots(3, 1, figsize=(20, 16), sharex=True)
+    fig, axs = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
 
     # Plot individual populations for first run
     axs[0].plot(t_values, y_values1[0], label='Fire Population', color='red')
